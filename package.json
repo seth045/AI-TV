@@ -1,0 +1,13 @@
+{
+  "name": "ai-tv",
+  "version": "1.0.0",
+  "description": "Themed, animated TV home screen controlled live from your phone",
+  "private": true,
+  "license": "MIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AI-TV">
+<meta name="theme-color" content="#0b0d12">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<title>AI-TV Remote</title>
+<link rel="stylesheet" href="/remote.css">
+</head>
+<body>
+<div id="pairView" class="view">
+  <div class="pairBox">
+    <div class="logo">AI·TV</div>
+    <h1>Connect to your TV</h1>
+    <p>Open <b id="tvUrl"></b> on your TV, then enter the 4-character code it shows.</p>
+    <input id="codeInput" type="text" maxlength="4" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" inputmode="text" placeholder="····" aria-label="TV code">
+    <div id="pairError" role="alert"></div>
+    <button id="pairBtn" class="primary">Connect</button>
+  </div>
+</div>
+
+<div id="mainView" class="view" hidden>
+  <header>
+    <div class="logo small">AI·TV</div>
+    <button id="status" class="pill" aria-live="polite"><i></i><span id="statusText">Connecting…</span></button>
+  </header>
+  <div id="carousel" aria-label="Themes"></div>
+  <div id="dots"></div>
+  <main id="controls"></main>
+</div>
+
+<script src="/themes.js"></script>
+<script src="/scene.js"></script>
+<script src="/remote.js"></script>
+</body>
+</html>

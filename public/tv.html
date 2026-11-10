@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI-TV</title>
+<link rel="stylesheet" href="/tv.css">
+</head>
+<body class="t-christmas">
+<canvas id="bg"></canvas>
+<div id="vig"></div>
+<div id="ui">
+  <div id="top">
+    <div id="greet"><div id="hello"></div><div id="sub"></div></div>
+    <div id="clockBox"><div id="clock"></div></div>
+  </div>
+  <div id="rowWrap"><div id="rowInner"><div id="lights"></div><div id="row"></div></div></div>
+  <div id="chip"></div>
+  <div id="hint"></div>
+</div>
+<div id="pair">
+  <div id="pairCard">
+    <h1>Connect your phone</h1>
+    <div id="qr"></div>
+    <p>Scan the code, or open <b id="pairUrl"></b> and enter</p>
+    <div id="pairCode"></div>
+    <p class="small">Press OK to skip</p>
+  </div>
+</div>
+<script src="/vendor/qrcode.js"></script>
+<script src="/themes.js"></script>
+<script src="/scene.js"></script>
+<script src="/tv.js"></script>
+</body>
+</html>

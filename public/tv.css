@@ -1,0 +1,138 @@
+/* TV screen. 1rem = 1% of the overscan-safe width (set from JS), so the whole
+   layout scales with the screen and with the safe-margin setting.
+   Old TV engines: no flex gap, inset, clamp(), aspect-ratio or backdrop-filter. */
+html { font-size: 1vw; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+body {
+  --accent: #d4af37; --accent2: #c8102e; --text: #fff8e7; --ribbon: #c8102e;
+  color: var(--text);
+  font-family: Georgia, serif;
+  cursor: default;
+  -webkit-user-select: none; user-select: none;
+}
+#bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+#vig {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  background: linear-gradient(to bottom, rgba(0,0,0,.5), rgba(0,0,0,0) 32%, rgba(0,0,0,0) 50%, rgba(0,0,0,.62));
+}
+#ui { position: absolute; left: 4vw; right: 4vw; top: 4vh; bottom: 4vh; transition: transform 4s ease; }
+#top { position: absolute; left: 0; right: 0; top: 0; text-shadow: 0 .1rem .8rem rgba(0,0,0,.65); }
+#greet { float: left; padding-top: 1rem; }
+#hello { font-size: 3.6rem; font-weight: bold; }
+#sub { font-size: 1.6rem; opacity: .85; margin-top: .5rem; }
+#clockBox { float: right; text-align: right; }
+#clock { font-size: 8rem; line-height: 1; font-weight: bold; }
+#clock small { font-size: 2.4rem; margin-left: .6rem; opacity: .85; }
+
+#rowWrap { position: absolute; left: 0; right: 0; bottom: 4.5rem; text-align: center; }
+#rowInner { display: inline-block; position: relative; }
+#row { white-space: nowrap; }
+.tile {
+  display: inline-block; vertical-align: top; position: relative;
+  width: 10rem; margin: 0 .6rem; text-align: center; outline: none;
+  transition: transform .2s ease;
+}
+.face {
+  position: relative; height: 6.2rem; background: var(--app);
+  border-radius: 1rem; box-sizing: border-box;
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+.face:before { content: ''; position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: inherit; }
+.glyph { position: relative; display: block; font-size: 3.2rem; line-height: 6.2rem; font-weight: bold; color: #fff; text-shadow: 0 .1rem .4rem rgba(0,0,0,.5); }
+.label { margin-top: .9rem; font-size: 1.5rem; opacity: .8; text-shadow: 0 .1rem .6rem rgba(0,0,0,.8); overflow: hidden; text-overflow: ellipsis; }
+.deco { position: absolute; left: 0; top: 0; right: 0; height: 6.2rem; pointer-events: none; }
+.deco svg { position: absolute; display: block; overflow: visible; }
+body.no-deco .deco, body.no-deco #lights { display: none; }
+
+/* One focus grammar everywhere: bigger, brighter, glowing. */
+.tile.focus { transform: scale(1.14); z-index: 2; }
+.tile.focus .label { opacity: 1; font-weight: bold; }
+.tile.focus .face { box-shadow: 0 0 0 .25rem var(--accent), 0 0 2.6rem var(--accent); }
+
+#chip { position: absolute; left: 0; bottom: 0; font: 1.15rem/1 'Helvetica Neue', Arial, sans-serif; opacity: .6; text-shadow: 0 0 .4rem #000; }
+#chip b { letter-spacing: .15em; }
+#chip i { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; background: #e0a030; margin-right: .5rem; }
+#chip.on i { background: #4cd964; }
+#hint { position: absolute; right: 0; bottom: 0; font: 1.15rem/1 'Helvetica Neue', Arial, sans-serif; opacity: .7; text-shadow: 0 0 .4rem #000; }
+
+#pair { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,.72); display: none; text-align: center; font-family: 'Helvetica Neue', Arial, sans-serif; color: #fff; }
+#pair.show { display: block; }
+#pairCard { position: absolute; left: 50%; top: 50%; width: 46rem; margin-left: -23rem; -webkit-transform: translateY(-50%); transform: translateY(-50%); background: #14161c; border-radius: 2rem; padding: 2.4rem 2rem; box-sizing: border-box; box-shadow: 0 1rem 5rem rgba(0,0,0,.6); }
+#pairCard h1 { font-size: 3rem; margin: 0 0 1.4rem; }
+#pairCard p { font-size: 1.6rem; margin: 1.2rem 0 .6rem; opacity: .9; }
+#pairCard .small { font-size: 1.2rem; opacity: .5; }
+#qr { display: inline-block; background: #fff; padding: .8rem; border-radius: 1rem; }
+#qr img { display: block; width: 14rem; height: 14rem; image-rendering: pixelated; }
+#pairCode { font: bold 5.5rem/1 'Courier New', monospace; letter-spacing: .35em; margin-left: .35em; }
+
+/* ------------------------------------------------------------- Christmas */
+.t-christmas .face { border: .15rem solid var(--accent); }
+.t-christmas .face:before { background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.45)); }
+.t-christmas .glyph { margin-right: 2.4rem; }
+.d-ribbon { position: absolute; right: 2.1rem; top: 0; bottom: 0; width: .95rem; background: var(--ribbon); box-shadow: inset .18rem 0 0 rgba(255,255,255,.28), inset -.18rem 0 0 rgba(0,0,0,.22); }
+.d-bow { right: .75rem; top: -1.55rem; width: 3.6rem; height: 2.2rem; fill: var(--ribbon); stroke: rgba(0,0,0,.3); stroke-width: 1.2; }
+.d-snow { left: -.25rem; top: -.5rem; width: 10.5rem; height: 1.5rem; fill: #fff; }
+.t-christmas .tile.focus .d-bow { -webkit-animation: wiggle .7s ease 2; animation: wiggle .7s ease 2; }
+@-webkit-keyframes wiggle { 0%,100% { -webkit-transform: rotate(0); } 25% { -webkit-transform: rotate(-9deg); } 75% { -webkit-transform: rotate(9deg); } }
+@keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-9deg); } 75% { transform: rotate(9deg); } }
+#lights { display: none; position: absolute; left: 0; right: 0; top: -3.4rem; height: 3rem; }
+.t-christmas #lights { display: block; }
+#lights svg { width: 100%; height: 100%; display: block; overflow: visible; }
+#lights path { fill: none; stroke: #10261b; stroke-width: 1.6; }
+.l-twinkle .bulb { -webkit-animation: tw 2.6s ease-in-out infinite; animation: tw 2.6s ease-in-out infinite; }
+.l-chase .bulb { -webkit-animation: ch 1.6s steps(1) infinite; animation: ch 1.6s steps(1) infinite; }
+@-webkit-keyframes tw { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+@keyframes tw { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+@-webkit-keyframes ch { 0% { opacity: 1; } 25% { opacity: .2; } }
+@keyframes ch { 0% { opacity: 1; } 25% { opacity: .2; } }
+
+/* ------------------------------------------------------------- Halloween */
+.t-halloween .face { border-radius: .3rem 1.3rem .3rem 1.3rem; box-shadow: inset 0 0 1.5rem var(--accent); }
+.t-halloween .face:before { background: rgba(12,6,18,.62); }
+.t-halloween .tile.focus { transform: scale(1.14) rotate(-1.5deg); }
+.t-halloween .tile.focus .face { -webkit-animation: flicker 1.7s linear infinite; animation: flicker 1.7s linear infinite; box-shadow: inset 0 0 1.5rem var(--accent), 0 0 0 .25rem var(--accent), 0 0 2.6rem var(--accent); }
+@-webkit-keyframes flicker { 0%,100% { opacity: 1; } 42% { opacity: .9; } 47% { opacity: .78; } 53% { opacity: .95; } 80% { opacity: .86; } }
+@keyframes flicker { 0%,100% { opacity: 1; } 42% { opacity: .9; } 47% { opacity: .78; } 53% { opacity: .95; } 80% { opacity: .86; } }
+.d-web { left: 0; top: 0; width: 3.4rem; height: 3.4rem; fill: none; stroke: rgba(255,255,255,.5); stroke-width: 1; }
+.d-drip { left: 0; top: 5.9rem; width: 10rem; height: 1.6rem; fill: var(--accent); opacity: .9; }
+.t-halloween .label { margin-top: 1.6rem; }
+
+/* ------------------------------------------------------------------ Neon */
+.t-neon .face { background: #070314; border-radius: 0; border: .16rem solid var(--accent); box-shadow: 0 0 1.2rem var(--accent), inset 0 0 1.2rem rgba(0,0,0,.6); }
+.t-neon .face:before { background: repeating-linear-gradient(to bottom, rgba(255,255,255,.07) 0, rgba(255,255,255,.07) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 4px); }
+.t-neon .glyph { color: var(--accent2); text-shadow: 0 0 1rem var(--accent2); }
+.t-neon .label, .t-neon #hello, .t-neon #sub { text-transform: uppercase; letter-spacing: .14em; }
+.t-neon .label { font-size: 1.2rem; }
+.t-neon #clock { text-shadow: 0 0 1.4rem var(--accent); }
+.t-neon .tile.focus .face { border-color: var(--accent2); box-shadow: 0 0 0 .2rem var(--accent2), 0 0 2.8rem var(--accent2); }
+.t-neon .tile.focus .glyph { color: #fff; }
+.d-id { position: absolute; left: .5rem; bottom: .3rem; font: .7rem/1 'Courier New', monospace; color: var(--accent); opacity: .8; letter-spacing: .1em; }
+.d-br { position: absolute; width: 1rem; height: 1rem; border: .16rem solid var(--accent2); }
+.d-br.a { left: -.55rem; top: -.55rem; border-right: 0; border-bottom: 0; }
+.d-br.b { right: -.55rem; bottom: -.55rem; border-left: 0; border-top: 0; }
+#clock.glitch { -webkit-animation: glitch .22s steps(2) 1; animation: glitch .22s steps(2) 1; }
+@-webkit-keyframes glitch { 0% { text-shadow: .4rem 0 var(--accent2), -.4rem 0 var(--accent); -webkit-transform: translateX(.3rem); } 50% { text-shadow: -.4rem 0 var(--accent2), .4rem 0 var(--accent); -webkit-transform: translateX(-.3rem); } }
+@keyframes glitch { 0% { text-shadow: .4rem 0 var(--accent2), -.4rem 0 var(--accent); transform: translateX(.3rem); } 50% { text-shadow: -.4rem 0 var(--accent2), .4rem 0 var(--accent); transform: translateX(-.3rem); } }
+
+/* ----------------------------------------------------------------- Space */
+.t-space .face { border-radius: 1.7rem; border: 1px solid rgba(255,255,255,.4); }
+.t-space .face:before { background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(6,10,40,.72) 55%); }
+.t-space #clock, .t-space #hello { font-weight: 200; }
+.t-space .tile.focus { -webkit-animation: bob 3.2s ease-in-out infinite; animation: bob 3.2s ease-in-out infinite; }
+@-webkit-keyframes bob { 0%,100% { -webkit-transform: scale(1.14) translateY(0); } 50% { -webkit-transform: scale(1.14) translateY(-.3rem); } }
+@keyframes bob { 0%,100% { transform: scale(1.14) translateY(0); } 50% { transform: scale(1.14) translateY(-.3rem); } }
+.d-glint { width: 1.5rem; height: 1.5rem; fill: #fff; opacity: .9; }
+.d-glint.a { right: -.5rem; top: -.6rem; }
+.d-glint.b { left: .2rem; bottom: -.5rem; width: .9rem; height: .9rem; opacity: .7; }
+.d-orbit { display: none; position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.d-orbit i { position: absolute; left: 6.2rem; top: -.3rem; width: .6rem; height: .6rem; border-radius: 50%; background: #fff; box-shadow: 0 0 .8rem var(--accent), 0 0 .3rem #fff; }
+.t-space .tile.focus .d-orbit { display: block; -webkit-animation: orbit 5s linear infinite; animation: orbit 5s linear infinite; }
+@-webkit-keyframes orbit { from { -webkit-transform: scaleY(.55) rotate(0); } to { -webkit-transform: scaleY(.55) rotate(360deg); } }
+@keyframes orbit { from { transform: scaleY(.55) rotate(0); } to { transform: scaleY(.55) rotate(360deg); } }
+
+/* ---------------------------------------------------------------- Nature */
+.t-nature .face { border-radius: 1.8rem; border: .2rem solid rgba(255,249,236,.85); box-shadow: .3rem .35rem 0 rgba(0,0,0,.28); }
+.t-nature .face:before { background: rgba(70,45,20,.28); }
+.t-nature .tile.focus .face { box-shadow: 0 0 0 .25rem var(--accent), 0 0 2.8rem var(--accent); }
+.d-leaf { right: -.9rem; top: -1.2rem; width: 3.2rem; height: 3.2rem; }
+.t-nature .tile.focus .d-leaf { -webkit-animation: wiggle .8s ease 2; animation: wiggle .8s ease 2; }
