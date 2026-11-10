@@ -59,6 +59,8 @@ letterboxed and ties up the phone you want to use as the remote.
   browser. A web page cannot launch the TV's native Netflix/YouTube apps.
 - **Sound** needs one button press on the TV (browsers block audio until then). When mirroring, sound
   plays from the mirroring computer.
+- **Keep it on your home network.** Anyone who can reach the server and guess a 4-character code can
+  change that TV's theme. The server rate-limits guessing, but it has no accounts or passwords.
 - The server keeps everything in memory. If it restarts, the TV restores its own look automatically.
 
 ## How it works

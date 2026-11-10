@@ -92,3 +92,12 @@ test('remotes are told when the TV connects and disconnects', async () => {
   assert.deepStrictEqual(ev.map((e) => e.event), ['hello', 'presence', 'presence']);
   assert.deepStrictEqual([ev[1].data.tvs, ev[2].data.tvs], [1, 0]);
 });
+
+test('malformed URLs get a 400 instead of crashing the server', async () => {
+  for (const p of ['/%E0%A4%A', '/a%00b']) {
+    const res = await new Promise((resolve) => http.get(base + p, resolve));
+    assert.strictEqual(res.statusCode, 400);
+    res.resume();
+  }
+  assert.strictEqual((await fetch(base + '/api/health')).status, 200);
+});

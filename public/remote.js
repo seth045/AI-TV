@@ -29,6 +29,8 @@
   var retryTimer = 0;
   var retryDelay = 500;
   var sendTimer = 0;
+  var sending = false;    // one POST at a time, so edits can't arrive out of order
+  var connectSeq = 0;
   var lostTimer = 0;
   var scenes = {};        // themeId -> Scene for the carousel previews
   var cards = {};
@@ -43,10 +45,26 @@
     clearTimeout(sendTimer);
     sendTimer = 0;
     if (!code) return;
-    var body = JSON.stringify(state);
-    fetch('/api/state?room=' + code, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
-      .then(function (r) { if (r.ok && body === JSON.stringify(state)) dirty = false; })
-      .catch(function () { /* stays dirty; flushed on reconnect */ });
+    if (sending) { sendTimer = setTimeout(push, 40); return; }
+    var body = JSON.stringify(state), room = code;
+    sending = true;
+    fetch('/api/state?room=' + room, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body })
+      .then(function (r) { return r.ok; }, function () { return false; })
+      .then(function (ok) {
+        sending = false;
+        if (room !== code) return;
+        if (ok && body === JSON.stringify(state)) dirty = false;
+        else if (!ok && !sendTimer) sendTimer = setTimeout(push, 1500); // retry until it lands
+      });
+  }
+  function adopt(raw) {
+    var next = A.normalize(raw), themeChanged = next.theme !== state.theme;
+    if (JSON.stringify(next) === JSON.stringify(state)) return;
+    state = next;
+    store('aitv.remote.state', JSON.stringify(state));
+    renderAll();
+    // Keep the carousel on the live theme, or the next swipe would revert the TV.
+    if (themeChanged) centerCard(state.theme, false);
   }
   function changed() {
     dirty = true;
@@ -66,29 +84,32 @@
     clearTimeout(retryTimer);
     if (es) { es.close(); es = null; }
     if (!code) return;
+    var seq = ++connectSeq; // a newer connect() supersedes this one
     fetch('/api/room?room=' + code).then(function (r) { return r.json(); }).then(function (info) {
-      if (!code) return;
+      if (!code || seq !== connectSeq) return;
       if (!info.exists) { // server restarted and the TV hasn't come back yet
         setStatus('', 'Looking for TV ' + code + '…');
         return scheduleRetry();
       }
-      es = new EventSource('/api/events?role=remote&room=' + code);
-      es.addEventListener('hello', function (e) {
+      var my = (es = new EventSource('/api/events?role=remote&room=' + code));
+      my.addEventListener('hello', function (e) {
         var msg = JSON.parse(e.data);
         retryDelay = 500;
         clearTimeout(lostTimer); lostTimer = 0;
         presence(msg.tvs);
-        if (msg.state && !dirty) { state = A.normalize(msg.state); renderAll(); }
+        if (msg.state && !dirty) adopt(msg.state);
         else push();
       });
-      es.addEventListener('presence', function (e) { presence(JSON.parse(e.data).tvs); });
-      es.addEventListener('state', function (e) {
-        if (dirty) return; // our own newer edit is on its way
-        var next = A.normalize(JSON.parse(e.data).state);
-        if (JSON.stringify(next) !== JSON.stringify(state)) { state = next; renderAll(); }
+      my.addEventListener('presence', function (e) { presence(JSON.parse(e.data).tvs); });
+      my.addEventListener('state', function (e) {
+        if (!dirty) adopt(JSON.parse(e.data).state); // else our own newer edit is on its way
       });
-      es.onerror = function () { markLost(); if (es) es.close(); es = null; scheduleRetry(); };
-    }).catch(function () { markLost(); scheduleRetry(); });
+      my.onerror = function () {
+        my.close();
+        if (es !== my) return;
+        es = null; markLost(); scheduleRetry();
+      };
+    }).catch(function () { if (seq === connectSeq) { markLost(); scheduleRetry(); } });
   }
   function presence(tvs) {
     if (tvs > 0) setStatus('online', 'TV ' + code + ' connected');

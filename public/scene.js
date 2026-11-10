@@ -33,11 +33,12 @@
     return [Math.round(f(h + 1 / 3) * 255), Math.round(f(h) * 255), Math.round(f(h - 1 / 3) * 255)];
   }
 
-  var glowCache = {};
+  var glowCache = {}, glowCount = 0;
   function glow(c) {
     if (typeof c === 'string') c = rgb(c);
     var key = c.join(',');
     if (glowCache[key]) return glowCache[key];
+    if (++glowCount > 150) { glowCache = {}; glowCount = 1; } // bounded: colours come from user input
     var cv = document.createElement('canvas');
     cv.width = cv.height = 64;
     var g = cv.getContext('2d');
@@ -557,6 +558,7 @@
     this.t = 0;
     this.quality = 1;
     this.slow = 0;
+    this.fast = 0;
     this.running = false;
     this.themeId = null;
     this.s = null;
@@ -571,7 +573,10 @@
       if (dt <= 0) return;
       // Drop particles when the device can't keep ~30fps.
       self.slow = dt > 0.04 ? self.slow + dt : Math.max(0, self.slow - dt * 2);
-      if (self.slow > 2 && self.quality > 0.3) { self.quality *= 0.65; self.slow = 0; self.sync(); }
+      if (self.slow > 2 && self.quality > 0.3) { self.quality *= 0.65; self.slow = 0; self.fast = 0; self.sync(); }
+      // ...and bring them back once it has run smoothly for a while.
+      self.fast = dt < 0.025 ? self.fast + dt : 0;
+      if (self.fast > 20 && self.quality < 1) { self.quality = Math.min(1, self.quality * 1.25); self.fast = 0; self.sync(); }
       self.frame(dt);
     };
   }

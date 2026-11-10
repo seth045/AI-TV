@@ -28,6 +28,8 @@
   var scene = new A.Scene($('bg'), { maxW: 1280 });
   var tilesKey = '';
   var lastMinute = -1;
+  var sceneKey = '';
+  var remoteFocus = state.focus;
 
   // ------------------------------------------------------------ decorations
   var SVG = {
@@ -126,7 +128,9 @@
     b.style.setProperty('--ribbon', A.RIBBONS[s.ribbon] || '#c8102e');
     b.style.fontFamily = A.fontStack(state.theme, s.font);
     layout();
-    scene.set(state.theme, s);
+    // Rebuilding the scenery is the expensive part: skip it for focus/name/app edits.
+    var key = state.theme + JSON.stringify(s);
+    if (key !== sceneKey) { sceneKey = key; scene.set(state.theme, s); }
     renderTiles();
     renderFocus();
     $('hello').textContent = greeting();
@@ -208,7 +212,11 @@
   }
   function setOnline(on) { $('chip').className = on ? 'on' : ''; }
   function receive(raw) {
-    state = A.normalize(raw);
+    var next = A.normalize(raw), local = state.focus;
+    // Focus moved with the TV's own remote stays put unless the phone moves it.
+    if (next.focus === remoteFocus) next.focus = Math.min(local, Math.max(0, next.apps.length - 1));
+    else remoteFocus = next.focus;
+    state = next;
     store('aitv.state', JSON.stringify(state));
     if (!everPaired) { everPaired = true; store('aitv.paired', '1'); }
     $('pair').className = '';

@@ -15,7 +15,12 @@ const ROOM_RE = /^[A-HJ-NP-Z2-9]{4}$/; // no 0/O/1/I: codes are read off a TV
 const MAX_BODY = 8 * 1024;
 const MAX_ROOMS = 2000;
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
+const EMPTY_ROOM_TTL_MS = 10 * 60 * 1000; // rooms nobody ever paired with
 const HEARTBEAT_MS = 15000;
+const MAX_CLIENTS_PER_ROOM = 16;
+const MAX_BACKLOG = 256 * 1024; // drop SSE clients that stop reading
+const RATE_WINDOW_MS = 10000;
+const RATE_MAX = 300; // API requests per IP per window (a slider drag is ~25/s)
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -49,6 +54,7 @@ function tvCount(room) {
 }
 
 function send(client, event, data) {
+  if (client.res.writableLength > MAX_BACKLOG) return client.res.destroy();
   client.res.write('event: ' + event + '\ndata: ' + JSON.stringify(data) + '\n\n');
 }
 
@@ -81,6 +87,8 @@ function handleEvents(req, res, url) {
       error: role === 'tv' ? 'server full' : 'no TV with that code',
     });
   }
+
+  if (room.clients.size >= MAX_CLIENTS_PER_ROOM) return json(res, 429, { error: 'too many connections' });
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
@@ -145,7 +153,16 @@ function handleState(req, res, url) {
 }
 
 function handleStatic(req, res, url) {
-  let rel = decodeURIComponent(url.pathname);
+  let rel;
+  try {
+    rel = decodeURIComponent(url.pathname);
+  } catch (e) {
+    rel = '\0';
+  }
+  if (rel.indexOf('\0') !== -1) {
+    res.writeHead(400);
+    return res.end('Bad request');
+  }
   if (rel === '/') rel = '/remote.html';
   else if (rel === '/tv') rel = '/tv.html';
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
@@ -167,6 +184,15 @@ function handleStatic(req, res, url) {
   });
 }
 
+/** ip -> request count in the current window; cheap guard against code guessing and flooding */
+let hits = new Map();
+setInterval(() => { hits = new Map(); }, RATE_WINDOW_MS).unref();
+function allow(ip) {
+  const n = (hits.get(ip) || 0) + 1;
+  hits.set(ip, n);
+  return n <= RATE_MAX;
+}
+
 const server = http.createServer((req, res) => {
   let url;
   try {
@@ -174,6 +200,9 @@ const server = http.createServer((req, res) => {
   } catch (e) {
     res.writeHead(400);
     return res.end('Bad request');
+  }
+  if (url.pathname.startsWith('/api/') && !allow(req.socket.remoteAddress)) {
+    return json(res, 429, { error: 'slow down' });
   }
   if (url.pathname === '/api/events' && req.method === 'GET') return handleEvents(req, res, url);
   if (url.pathname === '/api/state' && req.method === 'POST') return handleState(req, res, url);
@@ -198,9 +227,14 @@ setInterval(() => {
   const now = Date.now();
   rooms.forEach((room, code) => {
     room.clients.forEach((c) => send(c, 'ping', 1)); // a real event, so client watchdogs can see it
-    if (room.clients.size === 0 && now - room.touched > ROOM_TTL_MS) rooms.delete(code);
+    const ttl = room.state ? ROOM_TTL_MS : EMPTY_ROOM_TTL_MS;
+    if (room.clients.size === 0 && now - room.touched > ttl) rooms.delete(code);
   });
 }, HEARTBEAT_MS).unref();
+
+server.maxConnections = 4000;
+server.requestTimeout = 15000; // slow-body POSTs
+server.headersTimeout = 10000;
 
 function lanAddresses() {
   const out = [];
