@@ -29,20 +29,21 @@
   var tilesKey = '';
   var lastMinute = -1;
   var sceneKey = '';
-  var remoteFocus = state.focus;
+  var photoUrl = '';
+  var bundled = {}; // themeId -> true/false once we know if public/wallpapers/<id>.jpg exists
+  var remoteFocus = Number(store('aitv.rfocus')) || 0; // last focus the phone asked for
 
   // ------------------------------------------------------------ decorations
   var SVG = {
     bow: '<svg class="d-bow" viewBox="0 0 68 40"><path d="M34 20C20 0 2 2 4 18c1 14 18 12 30 2z"/><path d="M34 20C48 0 66 2 64 18c-1 14-18 12-30 2z"/><path d="M30 22l-8 18 8-4 4-10 4 10 8 4-8-18z"/><circle cx="34" cy="20" r="6"/></svg>',
     snow: '<svg class="d-snow" viewBox="0 0 100 14" preserveAspectRatio="none"><path d="M0 6Q0 0 6 0L94 0Q100 0 100 6Q96 13 90 7Q84 14 76 7Q70 12 62 7Q54 14 46 7Q38 12 30 7Q22 14 14 7Q6 13 0 6Z"/></svg>',
     web: '<svg class="d-web" viewBox="0 0 40 40"><path d="M0 0L40 2M0 0L36 16M0 0L27 27M0 0L16 36M0 0L2 40M13 1Q13 5 11 6Q10 9 7 9Q5 11 5 12Q4 13 1 13M25 1Q25 9 22 11Q21 18 16 19Q13 22 10 22Q8 25 1 25M36 2Q36 13 32 14Q30 26 23 26Q21 31 14 32Q12 36 2 36"/></svg>',
-    drip: '<svg class="d-drip" viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M0 0L100 0L100 4Q96 4 95 9Q94 14 92 9Q91 4 80 4Q70 4 69 10Q68 16 66 10Q65 4 50 4Q40 4 39 8Q38 12 36 8Q35 4 20 4Q14 4 13 11Q12 16 10 11Q9 4 0 4Z"/></svg>',
     glint: function (c) { return '<svg class="d-glint ' + c + '" viewBox="0 0 20 20"><path d="M10 0Q11 9 20 10Q11 11 10 20Q9 11 0 10Q9 9 10 0Z"/></svg>'; },
     leaf: '<svg class="d-leaf" viewBox="0 0 40 40"><path d="M6 36Q16 26 30 10" fill="none" stroke="#3f6b35" stroke-width="2"/><path d="M30 10Q20 6 16 16Q24 20 30 10Z" fill="#8fce6f"/><path d="M22 19Q10 16 8 26Q18 30 22 19Z" fill="#6fb257"/><path d="M26 15Q36 16 36 26Q27 26 26 15Z" fill="#a9dc84"/></svg>'
   };
   function decoHtml(theme, idx) {
-    if (theme === 'christmas') return '<div class="d-ribbon"></div>' + SVG.snow + SVG.bow;
-    if (theme === 'halloween') return SVG.web + SVG.drip;
+    if (theme === 'christmas') return SVG.snow + SVG.bow;
+    if (theme === 'halloween') return SVG.web;
     if (theme === 'neon') return '<div class="d-br a"></div><div class="d-br b"></div><div class="d-id">APP_0' + (idx + 1) + '</div>';
     if (theme === 'space') return SVG.glint('a') + SVG.glint('b') + '<div class="d-orbit"><i></i></div>';
     return SVG.leaf;
@@ -79,7 +80,8 @@
     var html = '';
     for (var i = 0; i < state.apps.length; i++) {
       var app = appById(state.apps[i]);
-      html += '<div class="tile" data-i="' + i + '" style="--app:' + app.color + '"><div class="face"><span class="glyph">' + app.glyph +
+      html += '<div class="tile" data-i="' + i + '" style="--app:' + app.color + ';--ink:' + app.ink + '"><div class="face"><span class="glyph' +
+        (app.big ? ' big' : app.two ? ' two' : '') + '">' + esc(app.glyph) +
         '</span></div><div class="deco">' + decoHtml(state.theme, i) + '</div><div class="label">' + esc(app.name) + '</div></div>';
     }
     $('row').innerHTML = html;
@@ -112,6 +114,40 @@
     // "Auto" time of day in Cozy Nature follows the real clock.
     if (!first && state.theme === 'nature' && m === 0) scene.set(state.theme, state.settings[state.theme]);
   }
+  // A photograph (uploaded from the phone, or bundled in public/wallpapers/) replaces
+  // the painted scenery; the canvas then only draws the moving effects on top of it.
+  function showPhoto(url) {
+    if (url === photoUrl) return;
+    photoUrl = url;
+    var el = $('photo');
+    if (!url) { el.className = ''; scene.setPhoto(false); return; }
+    var img = new Image();
+    img.onload = function () {
+      if (photoUrl !== url) return;
+      el.style.backgroundImage = 'url("' + url + '")';
+      el.className = 'show';
+      scene.setPhoto(true);
+    };
+    img.onerror = function () {
+      if (photoUrl !== url) return;
+      photoUrl = '';
+      el.className = '';
+      scene.setPhoto(false);
+    };
+    img.src = url;
+  }
+  function pickPhoto() {
+    var id = state.theme, s = state.settings[id];
+    if (s.photo) return showPhoto('/api/wallpaper?room=' + code + '&theme=' + id + '&v=' + s.photo);
+    if (bundled[id] === true) return showPhoto('/wallpapers/' + id + '.jpg');
+    showPhoto('');
+    if (bundled[id] === undefined) {
+      var probe = new Image();
+      probe.onload = function () { bundled[id] = true; if (state.theme === id) pickPhoto(); };
+      probe.onerror = function () { bundled[id] = false; };
+      probe.src = '/wallpapers/' + id + '.jpg';
+    }
+  }
   function layout() {
     var safe = state.safe, W = window.innerWidth, ui = $('ui');
     document.documentElement.style.fontSize = (W * (1 - 2 * safe / 100) / 100) + 'px';
@@ -121,7 +157,7 @@
   }
   function apply() {
     var t = A.theme(state.theme), s = state.settings[state.theme], b = document.body;
-    b.className = 't-' + state.theme + (s.decorations ? '' : ' no-deco');
+    b.className = 't-' + state.theme + (s.decorations ? '' : ' no-deco') + (s.font === 'theme' ? ' f-theme' : '');
     b.style.setProperty('--accent', s.accent);
     b.style.setProperty('--accent2', state.theme === 'neon' ? A.NEON_SECOND[s.second] : s.accent);
     b.style.setProperty('--text', t.text);
@@ -129,8 +165,9 @@
     b.style.fontFamily = A.fontStack(state.theme, s.font);
     layout();
     // Rebuilding the scenery is the expensive part: skip it for focus/name/app edits.
-    var key = state.theme + JSON.stringify(s);
+    var key = state.theme + JSON.stringify(s).replace(/"photo":"[^"]*"/, '');
     if (key !== sceneKey) { sceneKey = key; scene.set(state.theme, s); }
+    pickPhoto();
     renderTiles();
     renderFocus();
     $('hello').textContent = greeting();
@@ -215,7 +252,7 @@
     var next = A.normalize(raw), local = state.focus;
     // Focus moved with the TV's own remote stays put unless the phone moves it.
     if (next.focus === remoteFocus) next.focus = Math.min(local, Math.max(0, next.apps.length - 1));
-    else remoteFocus = next.focus;
+    else { remoteFocus = next.focus; store('aitv.rfocus', String(remoteFocus)); }
     state = next;
     store('aitv.state', JSON.stringify(state));
     if (!everPaired) { everPaired = true; store('aitv.paired', '1'); }
@@ -264,6 +301,7 @@
     if (!n) return;
     state.focus = (state.focus + delta + n) % n;
     renderFocus();
+    store('aitv.state', JSON.stringify(state));
   }
   function openFocused() {
     var app = appById(state.apps[state.focus]);

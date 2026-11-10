@@ -10,6 +10,11 @@ body {
   cursor: default;
   -webkit-user-select: none; user-select: none;
 }
+#photo { position: absolute; left: -3%; top: -3%; width: 106%; height: 106%; background: #000 center / cover no-repeat; opacity: 0; transition: opacity 1.2s ease; -webkit-animation: drift 70s ease-in-out infinite alternate; animation: drift 70s ease-in-out infinite alternate; }
+#photo.show { opacity: 1; }
+/* Slow pan and zoom so a still photograph feels alive. */
+@-webkit-keyframes drift { from { -webkit-transform: scale(1) translate(0, 0); } to { -webkit-transform: scale(1.07) translate(-1.2%, -1%); } }
+@keyframes drift { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.07) translate(-1.2%, -1%); } }
 #bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
 #vig {
   position: absolute; left: 0; top: 0; width: 100%; height: 100%;
@@ -17,14 +22,14 @@ body {
 }
 #ui { position: absolute; left: 4vw; right: 4vw; top: 4vh; bottom: 4vh; transition: transform 4s ease; }
 #top { position: absolute; left: 0; right: 0; top: 0; text-shadow: 0 .1rem .8rem rgba(0,0,0,.65); }
-#greet { float: left; padding-top: 1rem; }
-#hello { font-size: 3.6rem; font-weight: bold; }
+#greet { float: left; padding-top: 1rem; max-width: 66rem; }
+#hello { font-size: 3.6rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #sub { font-size: 1.6rem; opacity: .85; margin-top: .5rem; }
 #clockBox { float: right; text-align: right; }
 #clock { font-size: 8rem; line-height: 1; font-weight: bold; }
 #clock small { font-size: 2.4rem; margin-left: .6rem; opacity: .85; }
 
-#rowWrap { position: absolute; left: 0; right: 0; bottom: 4.5rem; text-align: center; }
+#rowWrap { position: absolute; left: 0; right: 0; bottom: 4rem; text-align: center; }
 #rowInner { display: inline-block; position: relative; }
 #row { white-space: nowrap; }
 .tile {
@@ -32,20 +37,33 @@ body {
   width: 10rem; margin: 0 .6rem; text-align: center; outline: none;
   transition: transform .2s ease;
 }
+/* Tiles are a themed "material" (glossy, glass, neon...) rather than flat app colours. */
 .face {
-  position: relative; height: 6.2rem; background: var(--app);
-  border-radius: 1rem; box-sizing: border-box;
+  position: relative; height: 7.6rem; overflow: hidden;
+  border-radius: 1.5rem; box-sizing: border-box;
+  background: linear-gradient(to bottom, #333, #111);
   transition: box-shadow .2s ease, border-color .2s ease;
 }
-.face:before { content: ''; position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: inherit; }
-.glyph { position: relative; display: block; font-size: 3.2rem; line-height: 6.2rem; font-weight: bold; color: #fff; text-shadow: 0 .1rem .4rem rgba(0,0,0,.5); }
-.label { margin-top: .9rem; font-size: 1.5rem; opacity: .8; text-shadow: 0 .1rem .6rem rgba(0,0,0,.8); overflow: hidden; text-overflow: ellipsis; }
-.deco { position: absolute; left: 0; top: 0; right: 0; height: 6.2rem; pointer-events: none; }
+.face:before { content: ''; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.face:after { /* gloss: a soft highlight across the top half */
+  content: ''; position: absolute; left: 0; top: 0; right: 0; height: 48%;
+  background: linear-gradient(to bottom, rgba(255,255,255,.3), rgba(255,255,255,.04));
+  border-radius: 1.4rem 1.4rem 60% 60% / 1.4rem 1.4rem 1.2rem 1.2rem;
+}
+.glyph {
+  position: relative; z-index: 1; display: block; white-space: nowrap;
+  font: bold 2.1rem/7.6rem 'Helvetica Neue', Helvetica, Arial, sans-serif; letter-spacing: -.02em;
+  color: var(--ink); text-shadow: 0 .12rem .5rem rgba(0,0,0,.6);
+}
+.glyph.big { font-size: 4.2rem; }
+.glyph.two { white-space: normal; line-height: 1; padding: 1.9rem 2rem 0; font-size: 1.9rem; }
+.label { margin-top: 1rem; font-size: 1.5rem; opacity: 0; transition: opacity .2s; text-shadow: 0 .1rem .6rem rgba(0,0,0,.9); white-space: nowrap; }
+.deco { position: absolute; left: 0; top: 0; right: 0; height: 7.6rem; pointer-events: none; z-index: 2; }
 .deco svg { position: absolute; display: block; overflow: visible; }
 body.no-deco .deco, body.no-deco #lights { display: none; }
 
 /* One focus grammar everywhere: bigger, brighter, glowing. */
-.tile.focus { transform: scale(1.14); z-index: 2; }
+.tile.focus { transform: scale(1.14); z-index: 3; }
 .tile.focus .label { opacity: 1; font-weight: bold; }
 .tile.focus .face { box-shadow: 0 0 0 .25rem var(--accent), 0 0 2.6rem var(--accent); }
 
@@ -66,12 +84,11 @@ body.no-deco .deco, body.no-deco #lights { display: none; }
 #pairCode { font: bold 5.5rem/1 'Courier New', monospace; letter-spacing: .35em; margin-left: .35em; }
 
 /* ------------------------------------------------------------- Christmas */
-.t-christmas .face { border: .15rem solid var(--accent); }
-.t-christmas .face:before { background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,.45)); }
-.t-christmas .glyph { margin-right: 2.4rem; }
-.d-ribbon { position: absolute; right: 2.1rem; top: 0; bottom: 0; width: .95rem; background: var(--ribbon); box-shadow: inset .18rem 0 0 rgba(255,255,255,.28), inset -.18rem 0 0 rgba(0,0,0,.22); }
-.d-bow { right: .75rem; top: -1.55rem; width: 3.6rem; height: 2.2rem; fill: var(--ribbon); stroke: rgba(0,0,0,.3); stroke-width: 1.2; }
-.d-snow { left: -.25rem; top: -.5rem; width: 10.5rem; height: 1.5rem; fill: #fff; }
+.t-christmas .face { background: linear-gradient(to bottom, #c9181f 0%, #86101a 55%, #4a050b 100%); border: .12rem solid rgba(255,214,140,.8); box-shadow: 0 .5rem 1.4rem rgba(0,0,0,.55), inset 0 -.9rem 1.4rem rgba(0,0,0,.35); }
+.t-christmas .glyph { color: #fff8e7; }
+.t-christmas.f-theme #hello { font: normal 5.2rem/1.1 'Snell Roundhand', 'Apple Chancery', 'Lucida Handwriting', 'Brush Script MT', cursive; color: #f3d9a0; }
+.d-bow { right: -.5rem; top: -1.5rem; width: 3.6rem; height: 2.2rem; fill: var(--ribbon); stroke: rgba(0,0,0,.35); stroke-width: 1.2; }
+.d-snow { left: -.25rem; top: -.5rem; width: 10.5rem; height: 1.7rem; fill: #fff; }
 .t-christmas .tile.focus .d-bow { -webkit-animation: wiggle .7s ease 2; animation: wiggle .7s ease 2; }
 @-webkit-keyframes wiggle { 0%,100% { -webkit-transform: rotate(0); } 25% { -webkit-transform: rotate(-9deg); } 75% { -webkit-transform: rotate(9deg); } }
 @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-9deg); } 75% { transform: rotate(9deg); } }
@@ -87,20 +104,21 @@ body.no-deco .deco, body.no-deco #lights { display: none; }
 @keyframes ch { 0% { opacity: 1; } 25% { opacity: .2; } }
 
 /* ------------------------------------------------------------- Halloween */
-.t-halloween .face { border-radius: .3rem 1.3rem .3rem 1.3rem; box-shadow: inset 0 0 1.5rem var(--accent); }
-.t-halloween .face:before { background: rgba(12,6,18,.62); }
+.t-halloween .face { background: linear-gradient(to bottom, #33190a, #0d0705); border: .12rem solid var(--accent); box-shadow: 0 0 1.3rem var(--accent), inset 0 0 1.6rem rgba(0,0,0,.6); }
+.t-halloween .face:after { opacity: .45; }
 .t-halloween .tile.focus { transform: scale(1.14) rotate(-1.5deg); }
-.t-halloween .tile.focus .face { -webkit-animation: flicker 1.7s linear infinite; animation: flicker 1.7s linear infinite; box-shadow: inset 0 0 1.5rem var(--accent), 0 0 0 .25rem var(--accent), 0 0 2.6rem var(--accent); }
+.t-halloween .tile.focus .face { -webkit-animation: flicker 1.7s linear infinite; animation: flicker 1.7s linear infinite; }
 @-webkit-keyframes flicker { 0%,100% { opacity: 1; } 42% { opacity: .9; } 47% { opacity: .78; } 53% { opacity: .95; } 80% { opacity: .86; } }
 @keyframes flicker { 0%,100% { opacity: 1; } 42% { opacity: .9; } 47% { opacity: .78; } 53% { opacity: .95; } 80% { opacity: .86; } }
-.d-web { left: 0; top: 0; width: 3.4rem; height: 3.4rem; fill: none; stroke: rgba(255,255,255,.5); stroke-width: 1; }
-.d-drip { left: 0; top: 5.9rem; width: 10rem; height: 1.6rem; fill: var(--accent); opacity: .9; }
-.t-halloween .label { margin-top: 1.6rem; }
+.d-web { left: .2rem; top: .2rem; width: 3.2rem; height: 3.2rem; fill: none; stroke: rgba(255,255,255,.45); stroke-width: 1; }
 
 /* ------------------------------------------------------------------ Neon */
-.t-neon .face { background: #070314; border-radius: 0; border: .16rem solid var(--accent); box-shadow: 0 0 1.2rem var(--accent), inset 0 0 1.2rem rgba(0,0,0,.6); }
+.t-neon .face { background: #070314; border-radius: .3rem; border: .16rem solid var(--accent); box-shadow: 0 0 1.2rem var(--accent), inset 0 0 1.2rem rgba(0,0,0,.6); }
 .t-neon .face:before { background: repeating-linear-gradient(to bottom, rgba(255,255,255,.07) 0, rgba(255,255,255,.07) 1px, rgba(0,0,0,0) 1px, rgba(0,0,0,0) 4px); }
-.t-neon .glyph { color: var(--accent2); text-shadow: 0 0 1rem var(--accent2); }
+.t-neon .face:after { display: none; }
+.t-neon .glyph { color: var(--accent2); text-shadow: 0 0 1rem var(--accent2); font-family: 'Courier New', Menlo, monospace; text-transform: uppercase; font-size: 1.7rem; letter-spacing: .04em; }
+.t-neon .glyph.big { font-size: 4rem; }
+.t-neon .glyph.two { font-size: 1.5rem; }
 .t-neon .label, .t-neon #hello, .t-neon #sub { text-transform: uppercase; letter-spacing: .14em; }
 .t-neon .label { font-size: 1.2rem; }
 .t-neon #clock { text-shadow: 0 0 1.4rem var(--accent); }
@@ -115,8 +133,8 @@ body.no-deco .deco, body.no-deco #lights { display: none; }
 @keyframes glitch { 0% { text-shadow: .4rem 0 var(--accent2), -.4rem 0 var(--accent); transform: translateX(.3rem); } 50% { text-shadow: -.4rem 0 var(--accent2), .4rem 0 var(--accent); transform: translateX(-.3rem); } }
 
 /* ----------------------------------------------------------------- Space */
-.t-space .face { border-radius: 1.7rem; border: 1px solid rgba(255,255,255,.4); }
-.t-space .face:before { background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(6,10,40,.72) 55%); }
+.t-space .face { background: linear-gradient(135deg, rgba(26,48,128,.9), rgba(4,8,30,.92) 70%); border: .14rem solid var(--accent); box-shadow: 0 0 1.3rem var(--accent), inset 0 0 1.8rem rgba(124,156,255,.3); }
+.t-space .face:after { opacity: .5; }
 .t-space #clock, .t-space #hello { font-weight: 200; }
 .t-space .tile.focus { -webkit-animation: bob 3.2s ease-in-out infinite; animation: bob 3.2s ease-in-out infinite; }
 @-webkit-keyframes bob { 0%,100% { -webkit-transform: scale(1.14) translateY(0); } 50% { -webkit-transform: scale(1.14) translateY(-.3rem); } }
@@ -125,14 +143,14 @@ body.no-deco .deco, body.no-deco #lights { display: none; }
 .d-glint.a { right: -.5rem; top: -.6rem; }
 .d-glint.b { left: .2rem; bottom: -.5rem; width: .9rem; height: .9rem; opacity: .7; }
 .d-orbit { display: none; position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
-.d-orbit i { position: absolute; left: 6.2rem; top: -.3rem; width: .6rem; height: .6rem; border-radius: 50%; background: #fff; box-shadow: 0 0 .8rem var(--accent), 0 0 .3rem #fff; }
+.d-orbit i { position: absolute; left: 6.4rem; top: -.3rem; width: .6rem; height: .6rem; border-radius: 50%; background: #fff; box-shadow: 0 0 .8rem var(--accent), 0 0 .3rem #fff; }
 .t-space .tile.focus .d-orbit { display: block; -webkit-animation: orbit 5s linear infinite; animation: orbit 5s linear infinite; }
-@-webkit-keyframes orbit { from { -webkit-transform: scaleY(.55) rotate(0); } to { -webkit-transform: scaleY(.55) rotate(360deg); } }
-@keyframes orbit { from { transform: scaleY(.55) rotate(0); } to { transform: scaleY(.55) rotate(360deg); } }
+@-webkit-keyframes orbit { from { -webkit-transform: scaleY(.6) rotate(0); } to { -webkit-transform: scaleY(.6) rotate(360deg); } }
+@keyframes orbit { from { transform: scaleY(.6) rotate(0); } to { transform: scaleY(.6) rotate(360deg); } }
 
 /* ---------------------------------------------------------------- Nature */
-.t-nature .face { border-radius: 1.8rem; border: .2rem solid rgba(255,249,236,.85); box-shadow: .3rem .35rem 0 rgba(0,0,0,.28); }
-.t-nature .face:before { background: rgba(70,45,20,.28); }
+.t-nature .face { background: linear-gradient(to bottom, rgba(255,255,255,.4), rgba(255,255,255,.16)); border: .12rem solid rgba(255,255,255,.8); box-shadow: 0 .5rem 1.4rem rgba(0,0,0,.3); }
+.t-nature .glyph { color: #fff; }
 .t-nature .tile.focus .face { box-shadow: 0 0 0 .25rem var(--accent), 0 0 2.8rem var(--accent); }
 .d-leaf { right: -.9rem; top: -1.2rem; width: 3.2rem; height: 3.2rem; }
 .t-nature .tile.focus .d-leaf { -webkit-animation: wiggle .8s ease 2; animation: wiggle .8s ease 2; }

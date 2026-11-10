@@ -21,14 +21,15 @@
 
   // Tiles are generic coloured tiles with a letter, not real logos.
   A.APPS = [
-    { id: 'netflix', name: 'Netflix', glyph: 'N', color: '#c8141c', url: 'https://www.netflix.com' },
-    { id: 'youtube', name: 'YouTube', glyph: '▶', color: '#d93025', url: 'https://www.youtube.com/tv' },
-    { id: 'prime', name: 'Prime Video', glyph: 'P', color: '#1a98d5', url: 'https://www.primevideo.com' },
-    { id: 'disney', name: 'Disney+', glyph: 'D', color: '#16307a', url: 'https://www.disneyplus.com' },
-    { id: 'hulu', name: 'Hulu', glyph: 'H', color: '#1aa35c', url: 'https://www.hulu.com' },
-    { id: 'max', name: 'Max', glyph: 'M', color: '#5b2bd9', url: 'https://www.max.com' },
-    { id: 'spotify', name: 'Spotify', glyph: '♫', color: '#168d40', url: 'https://open.spotify.com' },
-    { id: 'twitch', name: 'Twitch', glyph: 'T', color: '#7d3fe0', url: 'https://www.twitch.tv' }
+    // `glyph` is the app's name set as text (never a logo image); `ink` tints it.
+    { id: 'netflix', name: 'Netflix', glyph: 'N', big: true, ink: '#ff2a34', color: '#c8141c', url: 'https://www.netflix.com' },
+    { id: 'disney', name: 'Disney+', glyph: 'Disney+', ink: '#ffffff', color: '#16307a', url: 'https://www.disneyplus.com' },
+    { id: 'max', name: 'Max', glyph: 'max', ink: '#ffffff', color: '#5b2bd9', url: 'https://www.max.com' },
+    { id: 'prime', name: 'Prime Video', glyph: 'prime video', two: true, ink: '#ffffff', color: '#1a98d5', url: 'https://www.primevideo.com' },
+    { id: 'youtube', name: 'YouTube', glyph: '\u25B6', big: true, ink: '#ff3b30', color: '#d93025', url: 'https://www.youtube.com/tv' },
+    { id: 'hulu', name: 'Hulu', glyph: 'hulu', ink: '#3ddc84', color: '#1aa35c', url: 'https://www.hulu.com' },
+    { id: 'spotify', name: 'Spotify', glyph: '\u266B', big: true, ink: '#3ddc84', color: '#168d40', url: 'https://open.spotify.com' },
+    { id: 'twitch', name: 'Twitch', glyph: 'twitch', ink: '#b78cff', color: '#7d3fe0', url: 'https://www.twitch.tv' }
   ];
 
   A.THEMES = [
@@ -103,7 +104,7 @@
 
   A.themeDefaults = function (id) {
     var t = A.theme(id);
-    var s = { intensity: 60, speed: 50, accent: t.accent, decorations: true, font: 'theme', sound: false };
+    var s = { intensity: 60, speed: 50, accent: t.accent, decorations: true, font: 'theme', sound: false, photo: '' };
     for (var i = 0; i < t.knobs.length; i++) s[t.knobs[i].key] = t.knobs[i].def;
     return s;
   };
@@ -156,7 +157,8 @@
         accent: /^#[0-9a-fA-F]{6}$/.test(src.accent) ? src.accent : def.accent,
         decorations: src.decorations === undefined ? true : !!src.decorations,
         font: oneOf(src.font, A.FONT_CHOICES, 'theme'),
-        sound: !!src.sound
+        sound: !!src.sound,
+        photo: typeof src.photo === 'string' && /^[a-z0-9]{1,16}$/.test(src.photo) ? src.photo : ''
       };
       for (var k = 0; k < t.knobs.length; k++) {
         var kb = t.knobs[k];

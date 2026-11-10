@@ -17,6 +17,18 @@ colour, tile decorations, font, ambient sound, plus theme-specific knobs (wind, 
 pattern, ribbon colour, fog, bats, nebula colour, time of day, …). You can also pick which
 apps appear, add your name to the greeting, and fix overscan with a screen-edge margin.
 
+## Photo backgrounds
+
+The built-in backgrounds are drawn in code. For a photorealistic look, give a theme a real picture:
+
+- **From your phone:** open a theme in the remote, tap **Background photo → Choose photo** and pick any image
+  (a photo, or artwork you generated elsewhere). It is resized on the phone, sent to the TV, and the theme's
+  moving effects — snow, embers, stars, fireflies, fog, bats — play on top while the picture slowly drifts.
+- **For everyone using the server:** drop a 1920×1080 JPEG at `public/wallpapers/<theme>.jpg`
+  (`christmas`, `halloween`, `neon`, `space`, `nature`) and it becomes that theme's default.
+
+Uploaded photos are stored in `data/wallpapers/` next to the server.
+
 ## Run it
 
 Needs [Node.js](https://nodejs.org) 18 or newer on any computer on your home Wi-Fi. No install step.

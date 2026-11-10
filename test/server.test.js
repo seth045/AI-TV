@@ -2,6 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
+process.env.AITV_DATA = require('node:fs').mkdtempSync(require('node:path').join(require('node:os').tmpdir(), 'aitv-'));
 const { server, rooms } = require('../server.js');
 
 let base;
@@ -100,4 +101,19 @@ test('malformed URLs get a 400 instead of crashing the server', async () => {
     res.resume();
   }
   assert.strictEqual((await fetch(base + '/api/health')).status, 200);
+});
+
+test('stores, serves and removes a background photo; rejects non-JPEGs', async () => {
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64, 1)]);
+  const up = (room, body) => fetch(base + '/api/wallpaper?theme=space&room=' + room, { method: 'POST', body });
+  assert.strictEqual((await up('ZZZZ', jpeg)).status, 404);
+  assert.strictEqual((await up('ABCD', Buffer.from('GIF89a....'))).status, 415);
+  const ok = await (await up('ABCD', jpeg)).json();
+  assert.match(ok.v, /^[a-z0-9]+$/);
+  const got = await fetch(base + '/api/wallpaper?theme=space&room=ABCD');
+  assert.strictEqual(got.headers.get('content-type'), 'image/jpeg');
+  assert.strictEqual((await got.arrayBuffer()).byteLength, jpeg.length);
+  assert.strictEqual((await fetch(base + '/api/wallpaper?theme=../x&room=ABCD')).status, 400);
+  await fetch(base + '/api/wallpaper?theme=space&room=ABCD', { method: 'DELETE' });
+  assert.strictEqual((await fetch(base + '/api/wallpaper?theme=space&room=ABCD')).status, 404);
 });

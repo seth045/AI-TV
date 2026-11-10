@@ -151,6 +151,7 @@
       }
     },
     under: function (sc, g, t, dt, w, h, s) {
+      if (sc.photo) return; // tree lights belong to the painted trees
       var u = h / 720, L = sc.extra.lights || [], i;
       for (i = 0; i < L.length; i++) blob(g, L[i].c, L[i].x, L[i].y, 9 * u, 0.45 + 0.5 * Math.sin(t * 1.6 + L[i].p));
       var st = sc.extra.star;
@@ -252,7 +253,7 @@
         g.fill();
       }
       // eyes
-      if (s.mood === 'eerie') {
+      if (s.mood === 'eerie' && !sc.photo) {
         for (i = 0; i < e.eyes.length; i++) {
           var ey = e.eyes[i], show = Math.sin(t * 0.35 + ey.p), blink = Math.sin(t * 0.9 + ey.p * 3) > 0.96 ? 0.15 : 1;
           if (show < 0.1) continue;
@@ -326,12 +327,14 @@
     },
     part: function (sc, g, p, dt, t, w, h, s) {
       p.y += p.v * dt;
-      if (p.y > h * 0.6) { p.y = -p.len; p.x = Math.random() * w; }
+      var floor = sc.photo ? h : h * 0.6;
+      if (p.y > floor) { p.y = -p.len; p.x = Math.random() * w; }
       g.globalAlpha = 0.45;
       g.fillStyle = A.NEON_SECOND[s.second] || '#ff2bd6';
-      g.fillRect(p.x, p.y, Math.max(1, h / 720 * 1.5), Math.min(p.len, h * 0.6 - p.y));
+      g.fillRect(p.x, p.y, Math.max(1, h / 720 * 1.5), Math.min(p.len, floor - p.y));
     },
     under: function (sc, g, t, dt, w, h, s) {
+      if (sc.photo) return; // grid and skyline are painted scenery
       var u = h / 720, hz = h * 0.6, cx = w / 2, i, e = sc.extra;
       // flicker one window now and then, painted straight onto the static layer
       if (e.wins && e.wins.length && Math.random() < dt * 4) {
@@ -424,7 +427,7 @@
     },
     under: function (sc, g, t, dt, w, h, s) {
       var u = h / 720, e = sc.extra, pl = e.planet, i;
-      if (pl) g.drawImage(pl, w * (0.2 + 0.02 * Math.sin(t * 0.05)) - pl.width / 2, h * (0.5 + 0.02 * Math.cos(t * 0.04)) - pl.height / 2);
+      if (pl && !sc.photo) g.drawImage(pl, w * (0.2 + 0.02 * Math.sin(t * 0.05)) - pl.width / 2, h * (0.5 + 0.02 * Math.cos(t * 0.04)) - pl.height / 2);
       e.next = e.next === undefined ? 3 : e.next - dt;
       if (e.next <= 0 && !e.shoot) {
         e.shoot = { x: w * (0.3 + Math.random() * 0.7), y: h * Math.random() * 0.4, life: 1 };
@@ -531,6 +534,7 @@
       g.restore();
     },
     over: function (sc, g, t, dt, w, h, s) {
+      if (sc.photo) return;
       var u = h / 720, B = sc.extra.blades || [], i, P = SKY[sc.extra.tod || 'dusk'];
       g.strokeStyle = P.blade;
       g.lineWidth = Math.max(1, 3 * u);
@@ -560,6 +564,7 @@
     this.slow = 0;
     this.fast = 0;
     this.running = false;
+    this.photo = false; // true: a photograph sits behind the canvas; draw effects only
     this.themeId = null;
     this.s = null;
     this.raf = 0;
@@ -597,6 +602,13 @@
     this.build();
   };
 
+  Scene.prototype.setPhoto = function (on) {
+    on = !!on;
+    if (on === this.photo) return;
+    this.photo = on;
+    if (this.s) this.build();
+  };
+
   Scene.prototype.build = function () {
     var w = this.canvas.width, h = this.canvas.height, g = this.bg.getContext('2d');
     this.bg.width = w; this.bg.height = h;
@@ -617,7 +629,8 @@
     dt *= 0.2 + s.speed / 100 * 1.8;
     this.t += dt;
     g.globalAlpha = 1;
-    g.drawImage(this.bg, 0, 0);
+    if (this.photo) g.clearRect(0, 0, w, h);
+    else g.drawImage(this.bg, 0, 0);
     if (I.under) I.under(this, g, this.t, dt, w, h, s);
     for (i = 0; i < this.parts.length; i++) I.part(this, g, this.parts[i], dt, this.t, w, h, s);
     g.globalAlpha = 1;

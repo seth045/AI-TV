@@ -199,7 +199,10 @@
       var sc = scenes[t.id], on = t.id === state.theme;
       cards[t.id].className = on ? 'card sel' : 'card';
       $('dots').children[i].className = on ? 'sel' : '';
+      var ph = state.settings[t.id].photo;
+      cards[t.id].style.backgroundImage = ph ? 'url("/api/wallpaper?room=' + code + '&theme=' + t.id + '&v=' + ph + '")' : '';
       sc.resize();
+      sc.setPhoto(!!ph);
       sc.set(t.id, state.settings[t.id]);
       if (on) sc.start();
       else { sc.stop(); sc.frame(0.05); } // only the selected preview animates
@@ -269,6 +272,33 @@
     var sc = scenes[state.theme];
     if (sc) sc.set(state.theme, cur());
   }
+
+  // Shrink the picked photo to TV size in the browser (also converts HEIC/PNG to JPEG).
+  function uploadPhoto(file, done) {
+    var url = URL.createObjectURL(file), img = new Image(), theme = state.theme;
+    img.onerror = function () { URL.revokeObjectURL(url); done('That file isn’t a picture this phone can read.'); };
+    img.onload = function () {
+      var scale = Math.min(1, 1920 / img.naturalWidth, 1920 / img.naturalHeight);
+      var cv = document.createElement('canvas');
+      cv.width = Math.round(img.naturalWidth * scale);
+      cv.height = Math.round(img.naturalHeight * scale);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url);
+      cv.toBlob(function (blob) {
+        if (!blob) return done('Couldn’t prepare that photo.');
+        fetch('/api/wallpaper?room=' + code + '&theme=' + theme, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob })
+          .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (res) {
+            if (!res.ok) return done(res.j.error || 'Upload failed.');
+            state.settings[theme].photo = res.j.v;
+            done('');
+          })
+          .catch(function () { done('Upload failed. Check your Wi-Fi.'); });
+      }, 'image/jpeg', 0.86);
+    };
+    img.src = url;
+  }
+
   function appName(id) {
     for (var i = 0; i < A.APPS.length; i++) if (A.APPS[i].id === id) return A.APPS[i].name;
     return '';
@@ -298,6 +328,31 @@
       sw.appendChild(b);
     });
     sec.appendChild(sw);
+
+    sec = section('Background photo');
+    var pr = el('div', 'photoRow'), pick = el('button', '', cur().photo ? 'Change photo' : 'Choose photo'), file = el('input'), pnote = el('div', 'note',
+      cur().photo ? 'Your photo is on the TV, with this theme’s effects moving over it.' : 'Use any picture as this theme’s background. The effects (snow, stars, fog…) play on top.');
+    file.type = 'file'; file.accept = 'image/*'; file.hidden = true;
+    pick.addEventListener('click', function () { file.click(); });
+    file.addEventListener('change', function () {
+      if (!file.files || !file.files[0]) return;
+      pick.disabled = true; pick.textContent = 'Uploading…';
+      uploadPhoto(file.files[0], function (err) {
+        if (err) { pick.disabled = false; pick.textContent = 'Choose photo'; pnote.textContent = err; return; }
+        afterEdit(); renderPreviews(); buildControls();
+      });
+    });
+    pr.appendChild(pick);
+    if (cur().photo) {
+      var rm = el('button', '', 'Remove photo');
+      rm.addEventListener('click', function () {
+        fetch('/api/wallpaper?room=' + code + '&theme=' + state.theme, { method: 'DELETE' }).catch(function () {});
+        cur().photo = '';
+        afterEdit(); renderPreviews(); buildControls();
+      });
+      pr.appendChild(rm);
+    }
+    sec.appendChild(pr); sec.appendChild(file); sec.appendChild(pnote);
 
     sec = section(t.name);
     t.knobs.forEach(function (k) {
@@ -361,9 +416,9 @@
       afterEdit(); buildControls();
     });
     reset.addEventListener('click', function () {
-      var keep = cur().sound;
+      var keep = cur().sound, photo = cur().photo;
       state.settings[state.theme] = A.themeDefaults(state.theme);
-      cur().sound = keep;
+      cur().sound = keep; cur().photo = photo;
       afterEdit(); buildControls();
     });
     act.appendChild(surprise); act.appendChild(reset);
@@ -392,7 +447,8 @@
     renderPreviews();
     // Rebuilding mid-drag would steal the slider, so only rebuild when idle.
     var active = document.activeElement;
-    if (controlsFor !== state.theme || !active || !$('controls').contains(active)) buildControls();
+    var busy = active && active.tagName === 'INPUT' && $('controls').contains(active);
+    if (controlsFor !== state.theme || !busy) buildControls();
   }
   function showMain() {
     $('pairView').hidden = true;

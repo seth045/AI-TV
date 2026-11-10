@@ -39,7 +39,7 @@ button:active, .chip:active, .swatch:active { transform: scale(.96); }
 
 /* header */
 header { display: flex; align-items: center; justify-content: space-between; padding: 0 18px 12px; }
-.pill { display: flex; align-items: center; border: 0; border-radius: 99px; padding: 8px 14px; background: rgba(255,255,255,.1); font-size: 13px; }
+.pill { display: flex; align-items: center; min-height: 40px; border: 0; border-radius: 99px; padding: 8px 14px; background: rgba(255,255,255,.1); font-size: 13px; }
 .pill i { width: 9px; height: 9px; border-radius: 50%; background: #e0a030; margin-right: 8px; }
 .pill.online i { background: #4cd964; }
 .pill.lost i { background: #ff5b4f; }
@@ -49,6 +49,7 @@ header { display: flex; align-items: center; justify-content: space-between; pad
 #carousel::-webkit-scrollbar { display: none; }
 .card { flex: 0 0 78vw; max-width: 420px; margin: 0 6px; scroll-snap-align: center; border-radius: 20px; overflow: hidden; position: relative; background: #000; border: 2px solid rgba(255,255,255,.12); transition: border-color .25s, transform .25s, opacity .25s; opacity: .6; transform: scale(.94); padding: 0; text-align: left; }
 .card.sel { border-color: var(--accent); opacity: 1; transform: none; }
+.card { background: #000 center / cover no-repeat; }
 .card canvas { display: block; width: 100%; aspect-ratio: 16 / 9; }
 .card .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 10px; background: linear-gradient(to top, rgba(0,0,0,.8), rgba(0,0,0,0)); }
 .card .cap b { display: block; font-size: 18px; }
@@ -78,11 +79,11 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
 .chip { border: 1.5px solid rgba(255,255,255,.2); background: transparent; border-radius: 99px; padding: 9px 14px; margin: 4px; font-size: 14px; min-height: 40px; }
 .chip.on { background: var(--accent); border-color: var(--accent); color: #111; font-weight: 700; }
 .swatches { display: flex; justify-content: space-between; padding: 6px 0 2px; }
-.swatch { width: 34px; height: 34px; border-radius: 50%; border: 0; padding: 0; box-shadow: inset 0 0 0 2px rgba(0,0,0,.25); }
+.swatch { width: 40px; height: 40px; border-radius: 50%; border: 0; padding: 0; box-shadow: inset 0 0 0 2px rgba(0,0,0,.25); }
 .swatch.on { box-shadow: 0 0 0 3px #0b0d12, 0 0 0 6px #fff; }
 
-.switch { position: relative; width: 52px; height: 32px; border-radius: 16px; border: 0; background: rgba(255,255,255,.22); transition: background .2s; flex: none; }
-.switch:after { content: ''; position: absolute; left: 3px; top: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.switch { position: relative; width: 60px; height: 40px; border-radius: 20px; border: 0; background: rgba(255,255,255,.22); transition: background .2s; flex: none; }
+.switch:after { content: ''; position: absolute; left: 4px; top: 4px; width: 32px; height: 32px; border-radius: 50%; background: #fff; transition: transform .2s; }
 .switch.on { background: var(--accent); }
 .switch.on:after { transform: translateX(20px); }
 
@@ -91,9 +92,12 @@ input[type=range]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 
 .stepper span { min-width: 96px; text-align: center; font-size: 14px; opacity: .85; }
 .text { width: 150px; height: 40px; border-radius: 12px; border: 1.5px solid rgba(255,255,255,.2); background: rgba(0,0,0,.25); padding: 0 12px; text-align: right; outline: none; }
 .text:focus { border-color: var(--accent); }
+.photoRow { display: flex; margin: 4px -5px 0; }
+.photoRow button { flex: 1; height: 46px; margin: 0 5px; border-radius: 12px; border: 0; background: rgba(255,255,255,.14); font-weight: 600; font-size: 15px; }
+.photoRow button:disabled { opacity: .5; }
 .note { font-size: 12.5px; opacity: .55; margin-top: 4px; }
 
 .actions { display: flex; margin: 16px -5px 0; }
 .actions button { flex: 1; height: 50px; margin: 0 5px; border-radius: 14px; border: 0; background: rgba(255,255,255,.14); font-weight: 600; font-size: 15px; }
 .actions .primary { background: var(--accent); color: #111; }
-.link { display: block; margin: 18px auto 0; background: none; border: 0; opacity: .55; font-size: 14px; text-decoration: underline; padding: 10px; }
+.link { display: block; min-height: 44px; margin: 18px auto 0; background: none; border: 0; opacity: .55; font-size: 14px; text-decoration: underline; padding: 10px; }

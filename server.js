@@ -13,6 +13,9 @@ const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const ROOM_RE = /^[A-HJ-NP-Z2-9]{4}$/; // no 0/O/1/I: codes are read off a TV
 const MAX_BODY = 8 * 1024;
+const MAX_PHOTO = 6 * 1024 * 1024;
+const PHOTO_DIR = process.env.AITV_DATA || path.join(__dirname, 'data', 'wallpapers');
+const THEME_RE = /^[a-z]{2,16}$/;
 const MAX_ROOMS = 2000;
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
 const EMPTY_ROOM_TTL_MS = 10 * 60 * 1000; // rooms nobody ever paired with
@@ -30,6 +33,8 @@ const MIME = {
   '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.ico': 'image/x-icon',
 };
 
@@ -152,6 +157,52 @@ function handleState(req, res, url) {
   });
 }
 
+// Per-TV background photos, uploaded from the phone (the remote sends a resized JPEG).
+function handleWallpaper(req, res, url) {
+  const code = (url.searchParams.get('room') || '').toUpperCase();
+  const theme = url.searchParams.get('theme') || '';
+  if (!ROOM_RE.test(code) || !THEME_RE.test(theme)) return json(res, 400, { error: 'bad room or theme' });
+  const file = path.join(PHOTO_DIR, code + '-' + theme + '.jpg');
+
+  if (req.method === 'GET') {
+    return fs.readFile(file, (err, data) => {
+      if (err) return json(res, 404, { error: 'no photo' });
+      res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Content-Length': data.length, 'Cache-Control': 'private, max-age=31536000' });
+      res.end(data);
+    });
+  }
+  if (!rooms.has(code)) return json(res, 404, { error: 'no TV with that code' });
+  if (req.method === 'DELETE') return fs.unlink(file, () => json(res, 200, { ok: true }));
+  if (req.method !== 'POST') return json(res, 405, { error: 'method not allowed' });
+
+  let size = 0;
+  let aborted = false;
+  const chunks = [];
+  req.on('data', (chunk) => {
+    size += chunk.length;
+    if (size > MAX_PHOTO) {
+      aborted = true;
+      json(res, 413, { error: 'photo too large' });
+      return req.destroy();
+    }
+    chunks.push(chunk);
+  });
+  req.on('end', () => {
+    if (aborted) return;
+    const data = Buffer.concat(chunks);
+    if (data.length < 4 || data[0] !== 0xff || data[1] !== 0xd8 || data[2] !== 0xff) {
+      return json(res, 415, { error: 'photo must be a JPEG' });
+    }
+    fs.mkdir(PHOTO_DIR, { recursive: true }, (e1) => {
+      if (e1) return json(res, 500, { error: 'cannot store photo' });
+      fs.writeFile(file, data, (e2) => {
+        if (e2) return json(res, 500, { error: 'cannot store photo' });
+        json(res, 200, { ok: true, v: Date.now().toString(36) });
+      });
+    });
+  });
+}
+
 function handleStatic(req, res, url) {
   let rel;
   try {
@@ -206,6 +257,7 @@ const server = http.createServer((req, res) => {
   }
   if (url.pathname === '/api/events' && req.method === 'GET') return handleEvents(req, res, url);
   if (url.pathname === '/api/state' && req.method === 'POST') return handleState(req, res, url);
+  if (url.pathname === '/api/wallpaper') return handleWallpaper(req, res, url);
   if (url.pathname === '/api/room' && req.method === 'GET') {
     const room = rooms.get((url.searchParams.get('room') || '').toUpperCase());
     return json(res, 200, { exists: !!room, tvs: room ? tvCount(room) : 0 });
@@ -233,7 +285,7 @@ setInterval(() => {
 }, HEARTBEAT_MS).unref();
 
 server.maxConnections = 4000;
-server.requestTimeout = 15000; // slow-body POSTs
+server.requestTimeout = 60000; // slow-body POSTs (photo uploads need a little room)
 server.headersTimeout = 10000;
 
 function lanAddresses() {
