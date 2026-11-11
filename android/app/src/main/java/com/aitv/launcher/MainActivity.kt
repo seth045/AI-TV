@@ -71,8 +71,14 @@ class MainActivity : AppCompatActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
+    override fun onPause() {
+        super.onPause()
+        if (::web.isInitialized) web.onPause()   // stop animation while another app is in front
+    }
+
     override fun onResume() {
         super.onResume()
+        if (::web.isInitialized) web.onResume()
         // Refresh the app row in case apps were installed/removed while away.
         if (::web.isInitialized) {
             web.evaluateJavascript("window.AITV_LAUNCHER && window.AITV_LAUNCHER.refresh && window.AITV_LAUNCHER.refresh();", null)
