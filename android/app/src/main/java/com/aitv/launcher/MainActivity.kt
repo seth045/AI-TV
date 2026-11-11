@@ -11,6 +11,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
+import android.content.pm.PackageManager
+import androidx.lifecycle.Lifecycle
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
@@ -36,6 +39,8 @@ class MainActivity : AppCompatActivity() {
     private var web: WebView? = null
     private lateinit var bridge: WebAppInterface
     private val main = Handler(Looper.getMainLooper())
+    private var needsWeb = false
+    private var lastGone = 0L
 
     private val packagesChanged = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -51,9 +56,15 @@ class MainActivity : AppCompatActivity() {
         bridge = WebAppInterface(applicationContext)
         startWeb()
 
-        // Back never leaves Home; the page decides what it closes.
+        // The page decides what Back closes. With nothing to close, Back stays put when this is
+        // the TV's Home, and steps out like any other app when it is not.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() = js("onBack")
+            override fun handleOnBackPressed() {
+                val w = web ?: return leaveIfNotHome()
+                w.evaluateJavascript("!!(window.AITV_LAUNCHER && window.AITV_LAUNCHER.onBack && window.AITV_LAUNCHER.onBack())") {
+                    if (it != "true") leaveIfNotHome()
+                }
+            }
         })
 
         val filter = IntentFilter().apply {
@@ -64,6 +75,19 @@ class MainActivity : AppCompatActivity() {
             addDataScheme("package")
         }
         ContextCompat.registerReceiver(this, packagesChanged, filter, ContextCompat.RECEIVER_NOT_EXPORTED)   // system broadcasts still arrive
+    }
+
+    private fun leaveIfNotHome() {
+        val home = try {
+            packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), PackageManager.MATCH_DEFAULT_ONLY)
+        } catch (t: Throwable) { null }
+        val pkg = home?.activityInfo?.packageName
+        if (pkg != null && pkg != packageName && pkg != "android") moveTaskToBack(true)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (needsWeb) { needsWeb = false; startWeb() }
     }
 
     /** Creates (or recreates) the WebView. Falls back to a plain message and retries if the system WebView is unavailable. */
@@ -115,7 +139,10 @@ class MainActivity : AppCompatActivity() {
                 if (web === v) {
                     web = null
                     try { v.destroy() } catch (t: Throwable) { }
-                    main.post { if (!isFinishing && !isDestroyed) startWeb() }
+                    // Don't rebuild while hidden (memory is short right now), and back off if it keeps dying.
+                    val now = SystemClock.uptimeMillis(); val quick = now - lastGone < 10_000; lastGone = now
+                    if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) needsWeb = true
+                    else main.postDelayed({ if (!isFinishing && !isDestroyed && web == null) startWeb() }, if (quick) 3000L else 0L)
                 }
                 return true
             }

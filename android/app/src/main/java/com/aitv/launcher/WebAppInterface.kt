@@ -122,23 +122,31 @@ class WebAppInterface(private val ctx: Context) {
         val safe = key.replace(Regex("[^A-Za-z0-9._@-]"), "_")
         val dir = File(ctx.cacheDir, "icons")
         val file = File(dir, "$safe.png")
-        try {
-            if (file.isFile && file.length() > 0) return file.readBytes().also { memory.put(key, it) }
-        } catch (t: Throwable) {
-            // fall through and regenerate
+        // One at a time: several full-size banners decoding at once is too much for a 2GB stick.
+        synchronized(renderLock) {
+            memory.get(key)?.let { return it }
+            try {
+                if (file.isFile && file.length() > 0) return file.readBytes().also { memory.put(key, it) }
+            } catch (t: Throwable) {
+                // fall through and regenerate
+            }
+            val bytes = try { render(pkg) } catch (t: Throwable) { null } ?: return null
+            memory.put(key, bytes)
+            try {
+                dir.mkdirs()
+                // drop pictures of older versions of the same app
+                dir.listFiles { f -> f.name.startsWith(pkg.replace(Regex("[^A-Za-z0-9._@-]"), "_") + "@") }?.forEach { it.delete() }
+                // write beside, then rename: a half-written picture can never be served
+                val tmp = File(dir, "$safe.tmp")
+                tmp.writeBytes(bytes)
+                if (!tmp.renameTo(file)) tmp.delete()
+            } catch (t: Throwable) {
+                // the disk cache is only an optimisation
+            }
+            return bytes
         }
-        val bytes = try { render(pkg) } catch (t: Throwable) { null } ?: return null
-        memory.put(key, bytes)
-        try {
-            dir.mkdirs()
-            // drop pictures of older versions of the same app
-            dir.listFiles { f -> f.name.startsWith(pkg.replace(Regex("[^A-Za-z0-9._@-]"), "_") + "@") }?.forEach { it.delete() }
-            file.writeBytes(bytes)
-        } catch (t: Throwable) {
-            // the disk cache is only an optimisation
-        }
-        return bytes
     }
+    private val renderLock = Any()
 
     private fun render(pkg: String): ByteArray? {
         val pm = ctx.packageManager

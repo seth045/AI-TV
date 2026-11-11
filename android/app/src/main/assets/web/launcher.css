@@ -153,7 +153,7 @@ body.calm *, body.calm *::before, body.calm *::after { animation: none !importan
 body.calm #fxdom { display: none; }
 /* ambient layers rest while a dialog covers them */
 body.has-modal #fxdom * { animation-play-state: paused !important; }
-.fx-off-snow .fx-k-snow, .fx-off-stars .fx-k-stars, .fx-off-ships .fx-k-ships, .fx-off-ring .fx-k-ring, .fx-off-nebula .fx-k-nebula { display: none !important; }
+.fx-off-snow .fx-k-snow, .fx-off-stars .fx-k-stars, .fx-off-ships .fx-k-ships, .fx-off-ring .fx-k-ring, .fx-off-nebula .fx-k-nebula, .fx-off-rain .fx-k-rain, .fx-off-cars .fx-k-cars, .fx-off-holo .fx-k-holo, .fx-off-petals .fx-k-petals { display: none !important; }
 
 /* =====================================================================
    THEME: Christmas — warm gold on deep red, serif italics, soft and cosy
@@ -236,3 +236,46 @@ body.has-modal #fxdom * { animation-play-state: paused !important; }
 .sp-ship::after { content: ""; position: absolute; right: -.15rem; top: -.14rem; width: .44rem; height: .44rem; border-radius: 50%; background: #fff; box-shadow: 0 0 .6rem #9fe8ff, 0 0 1.4rem #46b8ff; }
 @keyframes sp-fly { 0%,4% { transform: translate(0,16rem) rotate(-9deg) scale(.7); opacity: 0; } 9% { opacity: .95; } 44% { opacity: .9; } 52%,100% { transform: translate(128rem,-4rem) rotate(-9deg) scale(1); opacity: 0; } }
 body.theme-space .tile.moving::before { top: -3%; }
+
+/* =====================================================================
+   THEME: Neon City — cyan and magenta light on wet midnight glass
+   ===================================================================== */
+.theme-neon {
+  --text: #eef6ff; --muted: #b4bfe0; --accent: #5ee9ff; --accent-ink: #06101f; --focus: #d5fbff; --glow: rgba(255,70,214,.5);
+  --panel: #0b0f22; --panel-line: rgba(94,233,255,.55); --panel-glow: rgba(255,70,214,.28); --row: rgba(150,170,255,.07); --row-focus: rgba(120,40,170,.45);
+  --scrim: rgba(3,3,12,.82); --btn: linear-gradient(100deg,#12b4f2,#8a48f5 58%,#f03fc9); --btn-ink: #fff; --line: rgba(150,180,255,.22);
+  --head-font: inherit; --head-style: normal; --head-weight: 700; --head-ink: #f4faff; --radius: 1.4rem;
+  --gear-line: rgba(94,233,255,.55); --gear-bg: rgba(8,8,26,.82); --gear-ink: #d5fbff;
+  --cols: 8; --gap-x: 0rem; --gap-y: 0rem; --pad: 2rem; --tile-ar: 190.4/178; --art-x: -2.52%; --art-y: 0%;
+  --tile-focus: translateY(-.5rem) scale(1.07);
+}
+.theme-neon .card { background: linear-gradient(155deg, #10183a, #0a0b1e 58%, #2a0d3c); }
+.theme-neon .card h1 { letter-spacing: .02em; text-transform: uppercase; font-size: 2.8rem; }
+.theme-neon #grid { left: calc(5.13% - 2rem); right: calc(3.77% - 2rem); top: calc(58% - 2rem); }
+.theme-neon #gear { right: 16.6%; top: 4.5%; }
+.theme-neon #clock { right: 6.4%; top: 4.3%; text-shadow: 0 0 1.6rem rgba(94,233,255,.6), 0 .2rem .6rem #02030a; }
+.theme-neon #time { font-weight: 500; letter-spacing: .02em; }
+.theme-neon #date { letter-spacing: .12em; text-transform: uppercase; color: #c3cdf0; }
+.theme-neon .tile .ico, .theme-neon .tile .ph { left: 24%; top: 20%; width: 52%; height: 36%; }
+.theme-neon .tile .ph { font-size: 3.4rem; }
+.theme-neon .tile .lbl { left: 14%; right: 14%; bottom: 19%; font-size: 1.35rem; font-weight: 500; }
+.theme-neon .tile .plus { top: 20%; font-size: 4.2rem; }
+.theme-neon .tile::before { content: ""; position: absolute; left: 6.5%; right: 6.5%; top: 9.5%; bottom: 9.5%; border-radius: 1.5rem; box-shadow: 0 0 1rem .15rem rgba(94,233,255,.85), 0 0 2.6rem .4rem rgba(255,70,214,.5); opacity: 0; transition: opacity .18s; }
+.theme-neon .tile::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 5.5%; height: .28rem; border-radius: .2rem; background: #e2fdff; box-shadow: 0 0 .9rem #5ee9ff, 0 0 2rem #ff46d6; opacity: 0; transform: scaleX(.3); transition: opacity .2s, transform .28s cubic-bezier(.2,.8,.2,1); }
+.theme-neon .tile:focus::before, .theme-neon .tile:hover::before { opacity: 1; }
+.theme-neon .tile:focus::after, .theme-neon .tile:hover::after { opacity: 1; transform: none; }
+body.theme-neon .tile.moving::before { top: -3%; }
+
+/* neon ambience: transform/opacity only (see FX.neon) */
+.nn-holo { position: absolute; right: 9%; top: 3%; width: 21%; height: 42%; background: radial-gradient(ellipse at 45% 40%, rgba(94,233,255,.22), rgba(255,81,239,.12) 45%, transparent 70%); animation: nn-pulse 3.6s ease-in-out infinite alternate; }
+.nn-halo { position: absolute; left: 41%; top: 13%; width: 33%; height: 20%; background: radial-gradient(ellipse, rgba(255,70,214,.2), rgba(94,233,255,.1) 45%, transparent 70%); animation: nn-pulse 4.4s ease-in-out infinite alternate; animation-delay: -2s; }
+@keyframes nn-pulse { from { opacity: .15; transform: scale(.97); } to { opacity: 1; transform: scale(1.05); } }
+.nn-rain { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.nn-rain i { position: absolute; left: 0; width: 100%; top: -100%; height: 200%; background-size: 100% 50%; background-repeat: repeat-y; animation: fx-fall 1s linear infinite; will-change: transform; }
+.nn-car { position: absolute; left: -8%; top: 30%; width: 4.4rem; height: .5rem; border-radius: 1rem; background: linear-gradient(90deg, transparent, rgba(94,233,255,.5) 55%, #1b2550 56%, #3a56a8); box-shadow: 0 0 .9rem rgba(94,233,255,.55); animation: nn-fly 24s linear infinite; animation-delay: -5s; }
+.nn-car::after { content: ""; position: absolute; right: -.1rem; top: .08rem; width: .36rem; height: .36rem; border-radius: 50%; background: #fff3c4; box-shadow: 0 0 .7rem #ffd84e; }
+.nn-car.b { top: 44%; width: 3rem; height: .36rem; opacity: .7; animation-name: nn-fly-b; animation-duration: 33s; animation-delay: -17s; }
+@keyframes nn-fly { 0% { transform: translate(0, 2rem) rotate(-5deg); opacity: 0; } 5% { opacity: .95; } 55% { opacity: .9; } 62%, 100% { transform: translate(120rem, -5rem) rotate(-5deg); opacity: 0; } }
+@keyframes nn-fly-b { 0% { transform: translate(118rem, 0) scaleX(-1); opacity: 0; } 6% { opacity: .7; } 58% { opacity: .7; } 66%, 100% { transform: translate(-6rem, 3rem) scaleX(-1); opacity: 0; } }
+.nn-petal { position: absolute; width: .8rem; height: .5rem; border-radius: 70% 30% 70% 30%; background: linear-gradient(90deg, #ff6bd5, #ffc2f1); opacity: 0; animation: nn-petal 12s linear infinite; }
+@keyframes nn-petal { 0% { transform: translate3d(0,0,0) rotate(0); opacity: 0; } 10% { opacity: .9; } 85% { opacity: .8; } 100% { transform: translate3d(-17rem, 26rem, 0) rotate(320deg); opacity: 0; } }

@@ -23,12 +23,19 @@
   var THEMES = [
     { id: 'christmas', name: 'Christmas', tagline: 'A cabin by a frozen lake', rows: 2, fx: 'snow',
       options: [{ key: 'snow', label: 'Snowfall', desc: 'Soft flakes drifting across the screen' }] },
-    { id: 'space', name: 'Deep Space', tagline: 'An outpost under a ringed station', rows: 2, fx: 'space',
+    { id: 'space', name: 'Deep Space', tagline: 'Under a ringed station', rows: 2, fx: 'space',
       options: [
         { key: 'stars', label: 'Living starfield', desc: 'Twinkling stars and the odd meteor' },
         { key: 'ships', label: 'Passing ships', desc: 'A craft crosses the sky now and then' },
         { key: 'ring', label: 'Station lights', desc: 'Energy traces around the orbital station' },
         { key: 'nebula', label: 'Nebula glow', desc: 'The nebula slowly breathes' }
+      ] },
+    { id: 'neon', name: 'Neon City', tagline: 'Rain over the megacity', rows: 2, fx: 'neon',
+      options: [
+        { key: 'rain', label: 'Rain', desc: 'Steady rain falling across the skyline' },
+        { key: 'cars', label: 'Hovercars', desc: 'Traffic gliding between the towers' },
+        { key: 'holo', label: 'Hologram pulse', desc: 'The billboard and tower ring glow and fade' },
+        { key: 'petals', label: 'Petals', desc: 'Cherry blossom drifting from the tree' }
       ] }
   ];
   // Apps that have hand-finished tile art in every theme: [art id, packages, label pattern, preview name]
@@ -41,7 +48,7 @@
     ['hulu', ['com.hulu.plus', 'com.hulu.livingroomplus'], /hulu/i, 'Hulu'],
     ['apple', ['com.apple.atve.androidtv.appletv'], /apple tv/i, 'Apple TV']
   ];
-  var VERSION = '1.2';
+  var VERSION = '1.3';
 
   // ------------------------------------------------------------------ helpers
   function $(id) { return document.getElementById(id); }
@@ -446,6 +453,27 @@
         '<i class="sp-beacon fx-k-ring" style="left:84.9%;top:8.3%"></i><i class="sp-beacon fx-k-ring" style="left:87.6%;top:36.6%;animation-delay:-1.3s"></i>' +
         '<div class="sp-ship fx-k-ships"></div>';
       box.insertAdjacentHTML('beforeend', h);
+    },
+    neon: function (box) {
+      var h = '<div class="nn-holo fx-k-holo"></div><div class="nn-halo fx-k-holo"></div>' +
+        '<div class="nn-car fx-k-cars"></div><div class="nn-car b fx-k-cars"></div>';
+      // two depths of rain; each is one picture of slanted streaks sliding down in a loop
+      [[90, 26, 0.22, 1.1], [45, 40, 0.34, 0.75]].forEach(function (L) {
+        var url = texture(640, 360, function (g, w, hh) {
+          g.lineCap = 'round';
+          for (var i = 0; i < L[0]; i++) {
+            var x = Math.random() * w, y = Math.random() * hh, len = L[1] * (0.6 + Math.random() * 0.8);
+            g.strokeStyle = 'rgba(190,225,255,' + (L[2] * (0.5 + Math.random() * 0.5)) + ')'; g.lineWidth = 1;
+            for (var k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(x, y + k * hh); g.lineTo(x - len * 0.16, y + k * hh + len); g.stroke(); }
+          }
+        });
+        h += '<div class="nn-rain fx-k-rain"><i style="background-image:url(' + url + ');animation-duration:' + L[3] + 's"></i></div>';
+      });
+      for (var i = 0; i < 12; i++) {
+        h += '<i class="nn-petal fx-k-petals" style="left:' + (80 + Math.random() * 19).toFixed(1) + '%;top:' + (46 + Math.random() * 22).toFixed(1) + '%;animation-duration:' +
+          (9 + Math.random() * 8).toFixed(1) + 's;animation-delay:-' + (Math.random() * 14).toFixed(1) + 's"></i>';
+      }
+      box.insertAdjacentHTML('beforeend', h);
     }
   };
   function buildFx() { var box = $('fxdom'); box.innerHTML = ''; var f = FX[theme.fx]; if (typeof f === 'function') { try { f(box); } catch (e) { box.innerHTML = ''; } } }
@@ -505,8 +533,9 @@
     return best;
   }
   function back() {
-    if (stack.length) { closeModal(); return; }
-    if (moving) { endMove(true); toast('Move cancelled'); }
+    if (stack.length) { closeModal(); return true; }
+    if (moving) { endMove(true); toast('Move cancelled'); return true; }
+    return false;                                   // nothing to close: the native side may leave if this isn't the TV's Home
   }
   function menu() {
     if (stack.length || moving) return;
