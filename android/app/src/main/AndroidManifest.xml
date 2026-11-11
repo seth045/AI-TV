@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- A launcher needs the full installed-app list to show and launch everything. -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Lets the user uninstall apps from the launcher (system confirmation dialog). -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
-    <!-- Runs on TV boxes that have no touchscreen and no leanback requirement should block install. -->
-    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <!-- A TV app: requires the TV UI, never a touchscreen. -->
+    <uses-feature android:name="android.software.leanback" android:required="true" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <!-- The launcher only needs to see apps that can be opened, so it asks for exactly
+         those instead of the broad QUERY_ALL_PACKAGES permission. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -23,9 +33,9 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             android:screenOrientation="landscape"
-            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode|density|smallestScreenSize"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode|density|smallestScreenSize|fontScale|locale|layoutDirection"
             android:theme="@style/AppTheme">
 
             <!-- Makes this app selectable as the device's HOME screen. -->
@@ -35,10 +45,9 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
-            <!-- Also lists it in the TV and phone app launchers. -->
+            <!-- Lists it among the TV's apps. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
