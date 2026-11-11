@@ -1,0 +1,94 @@
+/* AI-TV launcher screen. Tiles show each app's own real icon on a themed surface;
+   the Christmas layer (snow cap, bow, string lights) sits around them. */
+html { font-size: 1vw; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+body {
+  --accent: #e9c877; --accent2: #c8102e; --text: #fff8e7; --ribbon: #c8102e;
+  color: var(--text); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  -webkit-user-select: none; user-select: none; cursor: default;
+}
+#photo { position: absolute; left: -3%; top: -3%; width: 106%; height: 106%; background: #000 center / cover no-repeat; opacity: 0; transition: opacity 1s; }
+#photo.show { opacity: 1; }
+#bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+#vig { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  background: linear-gradient(to bottom, rgba(0,0,0,.5), rgba(0,0,0,0) 30%, rgba(0,0,0,0) 48%, rgba(0,0,0,.66)); }
+#ui { position: absolute; left: 4%; right: 4%; top: 4%; bottom: 4.5%; }
+
+#top { position: absolute; left: 0; right: 0; top: 0; text-shadow: 0 .1rem .8rem rgba(0,0,0,.7); }
+#greet { float: left; max-width: 66rem; }
+#hello { font-size: 3.6rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#sub { font-size: 1.7rem; opacity: .85; margin-top: .5rem; }
+#clockBox { float: right; text-align: right; }
+#clock { font-size: 8rem; line-height: 1; font-weight: bold; }
+#clock small { font-size: 2.4rem; margin-left: .5rem; opacity: .85; }
+body.f-theme.t-christmas #hello { font-family: 'Snell Roundhand', 'Apple Chancery', cursive; color: #f3d9a0; font-size: 5.2rem; }
+
+#rowWrap { position: absolute; left: 0; right: 0; bottom: 4rem; text-align: center; }
+#rowInner { display: inline-block; position: relative; }
+#row { white-space: nowrap; }
+.tile { display: inline-block; vertical-align: top; position: relative; width: 12rem; margin: 0 .55rem; text-align: center; outline: none; transition: transform .2s ease; }
+.face { position: relative; height: 7rem; overflow: hidden; border-radius: 1.4rem;
+  background: linear-gradient(to bottom, rgba(40,46,58,.92), rgba(12,15,22,.95));
+  border: .12rem solid rgba(255,255,255,.14);
+  box-shadow: 0 .5rem 1.4rem rgba(0,0,0,.5); }
+.appicon { position: absolute; left: 8%; top: 12%; width: 84%; height: 76%; object-fit: contain; z-index: 1; }
+.glyph { position: relative; z-index: 1; display: block; font-weight: 700; font-size: 3rem; line-height: 7rem; color: #fff; } /* fallback when no icon */
+.label { margin-top: .9rem; font-size: 1.5rem; opacity: 0; transition: opacity .2s; white-space: nowrap; text-shadow: 0 .1rem .6rem rgba(0,0,0,.9); overflow: hidden; text-overflow: ellipsis; }
+.deco { position: absolute; left: 0; top: 0; right: 0; height: 7rem; pointer-events: none; z-index: 2; }
+.deco svg { position: absolute; display: block; overflow: visible; }
+body.no-deco .deco, body.no-deco #lights { display: none; }
+
+.tile.focus { transform: scale(1.12); z-index: 3; }
+.tile.focus .label { opacity: 1; }
+.tile.focus .face { border-color: var(--accent); box-shadow: 0 0 0 .22rem var(--accent), 0 0 2.4rem var(--accent); }
+
+#hint { position: absolute; left: 0; bottom: 0; font: 1.15rem/1 'Helvetica Neue', Arial, sans-serif; opacity: .6; text-shadow: 0 0 .4rem #000; }
+
+/* Christmas decorations */
+.d-snow { left: -.25rem; top: -.5rem; width: 12.5rem; height: 1.6rem; fill: #fff; }
+.d-bow { right: -.4rem; top: -1.4rem; width: 3.4rem; height: 2.1rem; fill: var(--ribbon); stroke: rgba(0,0,0,.35); stroke-width: 1.2; transform-box: fill-box; transform-origin: 50% 40%; }
+.t-christmas .tile.focus .d-bow { -webkit-animation: wiggle .7s ease 2; animation: wiggle .7s ease 2; }
+@-webkit-keyframes wiggle { 0%,100% { -webkit-transform: rotate(0); } 25% { -webkit-transform: rotate(-10deg); } 75% { -webkit-transform: rotate(10deg); } }
+@keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
+#lights { display: none; position: absolute; left: 0; right: 0; top: -3rem; height: 2.8rem; }
+.t-christmas #lights { display: block; }
+#lights svg { width: 100%; height: 100%; display: block; overflow: visible; }
+#lights path { fill: none; stroke: #10261b; stroke-width: 1.6; }
+.l-twinkle .bulb { -webkit-animation: tw 2.6s ease-in-out infinite; animation: tw 2.6s ease-in-out infinite; }
+.l-chase .bulb { -webkit-animation: ch 1.5s steps(1) infinite; animation: ch 1.5s steps(1) infinite; }
+@-webkit-keyframes tw { 0%,100% { opacity: 1; } 50% { opacity: .22; } }
+@keyframes tw { 0%,100% { opacity: 1; } 50% { opacity: .22; } }
+@-webkit-keyframes ch { 0% { opacity: 1; } 28% { opacity: .18; } }
+@keyframes ch { 0% { opacity: 1; } 28% { opacity: .18; } }
+
+/* Other themes: frame + focus colour only (icons stay real) */
+.t-halloween .face { border-radius: .4rem 1.3rem .4rem 1.3rem; }
+.t-neon .face { border-radius: .2rem; border-color: var(--accent); box-shadow: 0 0 1rem var(--accent); }
+.t-space .face { border-radius: 1.7rem; }
+.t-nature .face { border-radius: 1.8rem; border-color: rgba(255,255,255,.7); }
+.t-halloween .d-web { left: .2rem; top: .2rem; width: 3rem; height: 3rem; fill: none; stroke: rgba(255,255,255,.4); stroke-width: 1; }
+.t-space .d-glint { fill: #fff; }
+.t-space .d-glint.a { right: -.4rem; top: -.5rem; width: 1.4rem; height: 1.4rem; }
+.t-nature .d-leaf { right: -.8rem; top: -1rem; width: 3rem; height: 3rem; }
+
+/* Settings panel */
+#panel { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,.72); display: none; }
+#panel.show { display: block; }
+#panelCard { position: absolute; right: 0; top: 0; height: 100%; width: 34rem; background: #12151d; box-shadow: -1rem 0 4rem rgba(0,0,0,.6); padding: 3rem 2.4rem; box-sizing: border-box; overflow-y: auto; }
+#panelCard h1 { font-size: 3rem; margin: 0 0 2rem; }
+.opt { padding: 1.4rem 0; border-top: .1rem solid rgba(255,255,255,.08); }
+.opt:first-child { border-top: 0; }
+.opt .lab { font-size: 1.7rem; margin-bottom: .8rem; opacity: .8; }
+.opt .choices { display: flex; flex-wrap: wrap; }
+.choice { border: .15rem solid rgba(255,255,255,.2); border-radius: 2rem; padding: .7rem 1.4rem; margin: .3rem .5rem .3rem 0; font-size: 1.5rem; outline: none; }
+.choice.on { background: var(--accent); border-color: var(--accent); color: #1a1205; font-weight: bold; }
+.choice.focus { box-shadow: 0 0 0 .2rem #fff; border-color: #fff; }
+.sw { display: inline-block; width: 5.4rem; height: 3rem; border-radius: 1.5rem; background: rgba(255,255,255,.22); position: relative; outline: none; vertical-align: middle; }
+.sw.on { background: var(--accent); }
+.sw:after { content: ''; position: absolute; left: .3rem; top: .3rem; width: 2.4rem; height: 2.4rem; border-radius: 50%; background: #fff; transition: transform .2s; }
+.sw.on:after { transform: translateX(2.4rem); }
+.sw.focus { box-shadow: 0 0 0 .2rem #fff; }
+.meter { display: inline-block; width: 18rem; height: .8rem; border-radius: .4rem; background: rgba(255,255,255,.2); position: relative; vertical-align: middle; }
+.meter i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: .4rem; background: var(--accent); }
+.meter.focus { box-shadow: 0 0 0 .2rem #fff; }
+.phint { margin-top: 2rem; font-size: 1.3rem; opacity: .5; }

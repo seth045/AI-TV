@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original TV-with-snow banner (320x180dp as required for TV apps). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path android:fillColor="#0b2a1e" android:pathData="M0,0 h320 v180 h-320 z" />
+    <path android:fillColor="#123d2b" android:pathData="M0,100 h320 v80 h-320 z" />
+    <path android:fillColor="#0b0d12" android:pathData="M96,48 h128 v66 a10,10 0 0 1 -10,10 h-108 a10,10 0 0 1 -10,-10 z" />
+    <path android:strokeColor="#e9c877" android:strokeWidth="5" android:fillColor="#00000000"
+        android:pathData="M96,58 a10,10 0 0 1 10,-10 h108 a10,10 0 0 1 10,10 v56 a10,10 0 0 1 -10,10 h-108 a10,10 0 0 1 -10,-10 z" />
+    <path android:fillColor="#e9c877" android:pathData="M150,128 h20 v8 h-20 z M134,138 h52 v7 h-52 z" />
+    <path android:fillColor="#ffffff" android:pathData="M60,40 m-4,0 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 M250,56 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0 M276,92 m-4,0 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 M44,96 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0" />
+    <path android:fillColor="#f3e6b8" android:pathData="M268,34 m-14,0 a14,14 0 1 0 28,0 a14,14 0 1 0 -28,0" />
+</vector>
