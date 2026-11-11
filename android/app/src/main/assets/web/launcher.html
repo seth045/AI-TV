@@ -9,8 +9,16 @@
 <body>
 <main id="stage" aria-label="Home screen">
   <img id="bg" alt="" draggable="false">
+  <script>
+    // Start fetching the wallpaper before the launcher script is parsed.
+    (function () {
+      var id = 'christmas';
+      try { var t = JSON.parse(localStorage.getItem('aitv_theme')); if (typeof t === 'string' && /^[a-z0-9_-]{1,32}$/.test(t)) id = t; } catch (e) {}
+      document.getElementById('bg').src = 'themes/' + id + '/home.webp';
+    })();
+  </script>
+  <img id="bg2" alt="" draggable="false">
   <div id="fxdom" aria-hidden="true"></div>
-  <canvas id="fx" aria-hidden="true"></canvas>
   <div id="shade" aria-hidden="true"></div>
 
   <button id="gear" data-f aria-label="Settings and themes">
@@ -19,11 +27,10 @@
   <div id="clock" aria-hidden="true"><div id="time"></div><div id="date"></div></div>
 
   <div id="grid" role="list" aria-label="Your apps"><div id="tiles"></div></div>
-  <div id="more" aria-hidden="true"><i></i></div>
+  <div id="track" aria-hidden="true"><i></i></div>
 
   <div id="modals"></div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <div id="veil" aria-hidden="true"></div>
 </main>
 <script src="launcher.js"></script>
 </body>
