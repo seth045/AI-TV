@@ -67,11 +67,15 @@
     for (i = 0; i < ART.length; i++) if (ART[i][2].test(app.label || '')) return ART[i][0];
     return null;
   }
+  // Returns false (and keeps what we had) if the device gave no list: a transient
+  // failure must never be mistaken for "the user has no apps" and wipe their layout.
   function loadInstalled() {
-    installed = []; byPkg = {};
-    if (native) { try { installed = JSON.parse(bridge.listApps()) || []; } catch (e) { installed = []; } }
-    else installed = ART.map(function (a) { return { package: 'demo:' + a[0], label: a[3], icon: '' }; });
+    var list = null;
+    if (native) { try { list = JSON.parse(bridge.listApps()); } catch (e) { list = null; } if (!list || !list.length) return false; }
+    else list = ART.map(function (a) { return { package: 'demo:' + a[0], label: a[3], icon: '' }; });
+    installed = list; byPkg = {};
     installed.forEach(function (a) { a.art = artFor(a); byPkg[a.package] = a; });
+    return true;
   }
   // Pins are what is on Home. Apps installed later are added automatically, as on a stock TV home screen.
   function syncPins() {
@@ -135,7 +139,7 @@
     }
     return '<div class="tile" role="listitem" tabindex="-1" data-f data-key="' + esc(a.package) + '" style="--i:' + i + '" aria-label="' + esc(a.label) + '">' +
       '<div class="art" style="background-image:url(' + dir + 't_' + (a.art || 'blank') + '.webp)"></div>' +
-      (a.art ? '' : (a.icon ? '<img class="ico" alt="" src="' + a.icon + '">' : '') + '<span class="lbl">' + esc(a.label) + '</span>') + '</div>';
+      (a.art ? '' : (a.icon ? '<img class="ico" alt="" src="' + esc(a.icon) + '">' : '') + '<span class="lbl">' + esc(a.label) + '</span>') + '</div>';
   }
   function items() { return pins.map(function (p) { return byPkg[p]; }).filter(Boolean).concat([{ add: true }]); }
   function render(animate) {
@@ -145,6 +149,7 @@
     focusIndex = clamp(focusIndex, 0, list.length - 1);
     sizeGrid();
     if (moving) markMoving();
+    if (!stack.length && document.activeElement !== $('gear')) focusTile(focusIndex);   // the focused tile was just rebuilt
   }
   function tileAt(i) { return tilesEl.children[i]; }
   function focusTile(i) {
@@ -191,10 +196,13 @@
   }
   function paintModal(m, keepId) {
     var body = m.card.querySelector('.body'), top = body ? body.scrollTop : 0;
+    var idx = [].indexOf.call(m.card.querySelectorAll('[data-f]'), document.activeElement);
     m.card.innerHTML = m.build();
-    var nb = m.card.querySelector('.body'); if (nb) { nb.style.scrollBehavior = 'auto'; nb.scrollTop = top; nb.style.scrollBehavior = ''; }
-    var el = keepId ? m.card.querySelector('[data-id="' + keepId + '"]') : null;
-    (el || m.card.querySelector('[data-f]')).focus({ preventScroll: !!el });
+    var nb = m.card.querySelector('.body'); if (nb) nb.scrollTop = top;
+    var all = m.card.querySelectorAll('[data-f]');
+    var el = keepId ? m.card.querySelector('[data-id="' + keepId.replace(/"/g, '') + '"]') : null;
+    if (!el && idx >= 0) el = all[Math.min(idx, all.length - 1)];          // the item went away: stay where the user was
+    if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'nearest' }); } else all[0].focus();
   }
   function repaint(keepId) { var m = topModal(); if (m) paintModal(m, keepId); }
   function closeModal(silent) {
@@ -244,7 +252,7 @@
     if (!list.length) h += '<p style="font-size:1.4rem;color:var(--muted)">No apps found on this device.</p>';
     h += list.map(function (a) {
       var on = pins.indexOf(a.package) >= 0;
-      var ico = a.icon ? '<img class="appico" alt="" src="' + a.icon + '">' : '<span class="appph">' + esc((a.label || '?').charAt(0)) + '</span>';
+      var ico = a.icon ? '<img class="appico" alt="" src="' + esc(a.icon) + '">' : '<span class="appph">' + esc((a.label || '?').charAt(0)) + '</span>';
       var r = '<button class="row" data-f data-id="pin-' + esc(a.package) + '" data-act="pin" data-v="' + esc(a.package) + '" role="switch" aria-checked="' + on + '" aria-label="' + esc(a.label) + ' on Home">' + ico +
         '<span class="txt"><b>' + esc(a.label) + '</b><small>' + (on ? 'On Home' : 'Hidden') + '</small></span>' + sw(on) + '</button>';
       return canDel ? '<div class="pair">' + r + '<button class="btn danger" data-f data-id="del-' + esc(a.package) + '" data-act="uninstall" data-v="' + esc(a.package) + '" aria-label="Uninstall ' + esc(a.label) + '">Uninstall</button></div>' : r;
@@ -413,7 +421,7 @@
   }
 
   // ------------------------------------------------------------------ input
-  var okTimer = 0, okTarget = null, okLong = false;
+  var okTimer = 0, okTarget = null, okLong = false, okModal = null;
   function key(e) {
     var k = e.key, c = e.keyCode;
     if (k === 'ArrowLeft' || c === 37 || c === 21) return 'left';
@@ -431,9 +439,13 @@
     list.forEach(function (b) {
       if (b === from) return;
       var r = b.getBoundingClientRect(), dx = r.left + r.width / 2 - px, dy = r.top + r.height / 2 - py;
-      var main = vert ? dy : dx, cross = vert ? dx : dy;
+      var main = vert ? dy : dx, cross = Math.abs(vert ? dx : dy);
       if (main * sign <= 2) return;
-      var s = Math.abs(main) + Math.abs(cross) * 2.2; if (s < score) { score = s; best = b; }
+      var overlap = vert ? Math.min(a.right, r.right) - Math.max(a.left, r.left) : Math.min(a.bottom, r.bottom) - Math.max(a.top, r.top);
+      if (overlap > 4) cross = 0;                                           // directly above/below (or beside): no penalty
+      // distance is measured edge to edge so a full-width row right below beats a small button further down
+      var gap = vert ? (sign > 0 ? r.top - a.bottom : a.top - r.bottom) : (sign > 0 ? r.left - a.right : a.left - r.right);
+      var s = Math.max(0, gap) + cross * 2.2; if (s < score) { score = s; best = b; }
     });
     return best;
   }
@@ -446,8 +458,17 @@
     var act = document.activeElement, m = topModal();
     if (k === 'back') { e.preventDefault(); back(); return; }
 
+    if (k === 'ok') {                                    // ---- OK: act on release (see keyup), long-press on tiles
+      e.preventDefault(); if (e.repeat || okTarget) return;
+      if (moving) { okLong = true; okTarget = act; endMove(); toast('Saved'); return; }
+      okTarget = act; okModal = m || null; okLong = false;
+      if (!m && act && act.classList && act.classList.contains('tile') && act.getAttribute('data-key') !== '+') {
+        okTimer = setTimeout(function () { okLong = true; openAppMenu(okTarget.getAttribute('data-key')); }, 520);
+      }
+      return;
+    }
     if (m) {                                             // ---- inside a dialog
-      if (k === 'ok' || k === 'menu') return;            // buttons click natively
+      if (k === 'menu') return;
       e.preventDefault();
       var list = [].slice.call(m.card.querySelectorAll('[data-f]'));
       if (list.indexOf(act) < 0) { list[0].focus(); return; }
@@ -459,14 +480,7 @@
     var onTile = act && act.classList && act.classList.contains('tile');
     if (moving) {                                        // ---- reordering a tile
       e.preventDefault();
-      if (k === 'left') shift(-1); else if (k === 'right') shift(1); else if (k === 'ok' && !e.repeat) { okLong = true; endMove(); toast('Saved'); }
-      return;
-    }
-    if (k === 'ok') {
-      if (!onTile) return;                               // the gear is a real button
-      e.preventDefault(); if (e.repeat || okTarget) return;
-      okTarget = act; okLong = false;
-      okTimer = setTimeout(function () { okLong = true; var kk = okTarget.getAttribute('data-key'); if (kk !== '+') openAppMenu(kk); }, 520);
+      if (k === 'left') shift(-1); else if (k === 'right') shift(1);
       return;
     }
     if (k === 'menu') { e.preventDefault(); if (onTile && act.getAttribute('data-key') !== '+') openAppMenu(act.getAttribute('data-key')); else openSettings(); return; }
@@ -483,9 +497,12 @@
   }, true);
   document.addEventListener('keyup', function (e) {
     if (key(e) !== 'ok') return;
+    e.preventDefault();
     clearTimeout(okTimer); var t = okTarget; okTarget = null;
     if (okLong) { okLong = false; return; }
-    if (t && !stack.length && !moving && document.activeElement === t) activateTile(t);
+    // only if nothing changed underneath the press: same element still focused, same dialog still on top
+    if (!t || moving || document.activeElement !== t || (topModal() || null) !== okModal) return;
+    if (t.classList.contains('tile')) activateTile(t); else t.click();
   }, true);
   tilesEl.addEventListener('click', function (e) {
     var t = e.target.closest && e.target.closest('.tile'); if (!t || e.detail === 0) return;      // keyboard is handled above
@@ -508,7 +525,7 @@
   window.AITV_LAUNCHER = {
     onBack: back,
     refresh: function () {
-      var before = pins.length; loadInstalled(); syncPins(); render(false);
+      var before = pins.length; if (!loadInstalled()) return; syncPins(); render(false);
       var m = topModal(); if (m) paintModal(m, document.activeElement && document.activeElement.getAttribute ? document.activeElement.getAttribute('data-id') : null);
       else if (document.activeElement === document.body || !document.activeElement) focusTile(focusIndex);
       if (pins.length > before) toast('New app added to Home');
@@ -516,8 +533,10 @@
   };
 
   // ------------------------------------------------------------------ boot
-  loadInstalled(); syncPins();
+  var booted = loadInstalled(); if (booted) syncPins();
   fit(); paintTheme(); tick(true); setInterval(tick, 5000);
   setTimeout(function () { fit(); focusTile(0); }, 80);
+  // the app list can be slow right after the device boots: keep asking until it arrives
+  if (!booted) (function retry(n) { setTimeout(function () { if (loadInstalled()) { syncPins(); render(true); } else if (n < 20) retry(n + 1); }, 1500); })(0);
   if (!load('aitv_tip', false)) setTimeout(function tip() { if (stack.length || moving) return setTimeout(tip, 3000); save('aitv_tip', true); toast('Tip: hold OK on an app to move or remove it'); }, 2600);
 })();

@@ -73,7 +73,7 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .eyebrow { font-size: 1.05rem; letter-spacing: .26em; font-weight: 700; color: var(--accent); text-transform: uppercase; }
 .card h1 { margin: .5rem 0 0; font-family: var(--head-font); font-style: var(--head-style); font-weight: var(--head-weight); font-size: 3.3rem; line-height: 1.1; color: var(--head-ink, var(--text)); letter-spacing: -.01em; }
 .card header p { margin: .8rem 0 0; font-size: 1.4rem; line-height: 1.5; color: var(--muted); }
-.body { padding: 0 3.2rem 1rem; overflow-y: auto; scrollbar-width: none; flex: 1; min-height: 0; scroll-behavior: smooth; }
+.body { padding: 0 3.2rem 1rem; overflow-y: auto; scrollbar-width: none; flex: 1; min-height: 0; }
 .body::-webkit-scrollbar { display: none; }
 .card footer { flex: none; padding: 1.2rem 3.2rem 2.2rem; display: flex; gap: 1rem; align-items: center; }
 .card footer .hint { margin-left: auto; font-size: 1.15rem; color: var(--muted); opacity: .8; }
@@ -119,7 +119,7 @@ h2 { margin: 1.8rem 0 .7rem; font-size: 1.1rem; letter-spacing: .2em; text-trans
   background: var(--panel); border: .1rem solid var(--panel-line, var(--line)); box-shadow: 0 .8rem 2.4rem rgba(0,0,0,.6); transition: opacity .25s, transform .25s cubic-bezier(.2,.8,.2,1); }
 #toast.on { opacity: 1; transform: translate(-50%, 0); }
 
-body.calm *, body.calm *::before, body.calm *::after { animation: none !important; }
+body.calm *, body.calm *::before, body.calm *::after { animation: none !important; transition: none !important; }
 body.calm #bg { transition: none; }
 
 /* =====================================================================
@@ -165,7 +165,7 @@ body.calm #bg { transition: none; }
 .theme-space #time { font-size: 1.95rem; font-weight: 300; letter-spacing: -.02em; }
 .theme-space #date { font-size: .85rem; letter-spacing: .14em; text-transform: uppercase; color: #a9c8ea; margin-top: .1rem; }
 .theme-space .tile .ico { left: 23%; top: 19%; width: 54%; height: 38%; }
-.theme-space .tile .lbl { left: 12%; right: 12%; bottom: 19.5%; font-size: 1.22rem; font-weight: 500; }
+.theme-space .tile .lbl { left: 8.5%; right: 8.5%; bottom: 19.5%; font-size: 1.15rem; font-weight: 500; }
 .theme-space .tile .plus { top: 20%; font-size: 4.2rem; }
 .theme-space .tile:focus .art, .theme-space .tile:hover .art { filter: brightness(1.22) drop-shadow(0 0 .3rem rgba(127,230,255,.9)) drop-shadow(0 0 .9rem rgba(47,141,255,.6)); }
 .theme-space .tile::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 6.5%; height: .28rem; border-radius: .2rem; background: #d9fdff; box-shadow: 0 0 .9rem #7fe6ff, 0 0 2rem #2f8dff; opacity: 0; transform: scaleX(.3); transition: opacity .2s, transform .28s cubic-bezier(.2,.8,.2,1); }
