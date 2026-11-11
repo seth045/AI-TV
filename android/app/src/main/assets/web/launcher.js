@@ -209,7 +209,7 @@
     var c = cols(), col = focusIndex % c, f = c > 1 ? col / (c - 1) - 0.5 : 0, r = Math.floor(focusIndex / c) - firstRow;
     $('bg').style.transform = prefs.calm ? 'scale(1.03)' : 'scale(1.03) translate(' + (-f * 0.9).toFixed(3) + '%,' + (-r * 0.25).toFixed(3) + '%)';
   }
-  function activate(i) { var a = shown[i]; if (!a) return; if (a.add) openApps(); else launch(a.package); }
+  function activate(i) { var a = shown[i]; if (!a) return; if (a.add) openApps(true); else launch(a.package); }
   // Long names scroll sideways while their tile is focused instead of being cut off.
   tilesEl.addEventListener('focusin', function (e) {
     var t = e.target.closest && e.target.closest('.tile'); if (!t) return;
@@ -260,7 +260,7 @@
   }
   function fades(m) {
     var b = m.card.querySelector('.body'); if (!b) return;
-    var up = b.scrollTop > 6, down = b.scrollTop + b.clientHeight < b.scrollHeight - 6;
+    var up = b.scrollTop > 6, down = b.scrollTop + b.clientHeight < b.scrollHeight - 20;
     b.classList.toggle('up', up); b.classList.toggle('down', down); m.card.classList.toggle('more', down);
   }
   function paintModal(m, keepId, fresh) {
@@ -344,7 +344,11 @@
       (can('openStore') ? '<button class="btn" data-f data-id="store" data-act="store">Get more apps</button>' : '') + MORE + '</footer>';
     return h;
   }
-  function openApps() { openModal(appsHtml); }
+  function openApps(adding) {
+    // from the Add tile, start on the first app that isn't on Home yet
+    var first = adding ? installed.filter(function (a) { return !pinned(a.package); }).sort(function (a, b) { return a.label.localeCompare(b.label); })[0] : null;
+    openModal(appsHtml, '', first ? 'pin-' + first.package : undefined);
+  }
 
   // ---- per-app menu (hold OK)
   function openAppMenu(pkg) {
@@ -614,12 +618,21 @@
     home: function () { if (moving) endMove(true); while (stack.length) closeModal(true); firstRow = 0; focusTile(0); },
     // Called when the launcher returns to the front and when apps are installed or removed.
     refresh: function () {
+      var was = byPkg, at = document.activeElement && document.activeElement.getAttribute ? document.activeElement : null;
+      var gone = at && at.getAttribute('data-act') === 'uninstall' ? at.getAttribute('data-v') : null;
       if (!loadInstalled()) return;
       var sig = signature(); if (sig === lastSig) { if (!document.activeElement || document.activeElement === document.body) restoreFocus(); return; }
       lastSig = sig;
       if (moving && !byPkg[moving]) { moving = null; moveFrom = null; hint(''); }
       var added = syncPins(); render(false);
       var m = topModal(); if (m) { try { paintModal(m, document.activeElement && document.activeElement.getAttribute ? document.activeElement.getAttribute('data-id') : null); } catch (e) { closeAll(); } }
+      if (gone && !byPkg[gone]) {
+        // the app under the cursor was just removed: say so, and never leave the cursor on another app's Uninstall
+        toast(((was[gone] && was[gone].label) || 'App') + ' uninstalled');
+        var now = document.activeElement;
+        if (now && now.getAttribute && now.getAttribute('data-act') === 'uninstall' && now.previousElementSibling) now.previousElementSibling.focus();
+        return;
+      }
       if (added) toast(added === 1 ? 'New app added to Home' : added + ' new apps added to Home');
     }
   };
