@@ -64,7 +64,7 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .tile .lbl.mq span { display: inline-block; animation: mq 5s ease-in-out infinite alternate; }
 @keyframes mq { 0%, 18% { transform: translateX(0); } 82%, 100% { transform: translateX(var(--shift, 0)); } }
 .tile .plus { position: absolute; left: 0; right: 0; text-align: center; font-weight: 200; line-height: 1; color: var(--accent); }
-.tile:focus, .tile:hover { transform: var(--tile-focus, scale(1.07)); z-index: 2; }
+.tile:focus { transform: var(--tile-focus, scale(1.07)); z-index: 2; }
 .tile.moving { animation: wobble .5s ease-in-out infinite alternate !important; z-index: 3; }
 body .tile.moving::before { content: "Moving"; position: absolute; left: 50%; right: auto; bottom: auto; top: 5%; transform: translateX(-50%); z-index: 4; opacity: 1 !important;
   font-size: 1.25rem; font-weight: 700; letter-spacing: .06em; padding: .3rem 1rem; border-radius: 2rem; color: var(--accent-ink); background: var(--accent); box-shadow: 0 .3rem 1rem rgba(0,0,0,.5); white-space: nowrap; width: auto; height: auto; transition: none; }
@@ -178,7 +178,7 @@ body.has-modal #fxdom * { animation-play-state: paused !important; }
 /* focus ring is always painted; only its opacity changes */
 .theme-christmas .tile::after { content: ""; position: absolute; left: 3.5%; right: 3.5%; top: 16.5%; bottom: 2.5%; border-radius: 15% / 18%; border: .3rem solid #ffe4aa;
   box-shadow: 0 0 1.4rem rgba(253,209,128,.8), 0 0 3.2rem rgba(248,126,51,.55), inset 0 0 2.6rem rgba(247,175,62,.2); opacity: 0; transition: opacity .16s; pointer-events: none; }
-.theme-christmas .tile:focus::after, .theme-christmas .tile:hover::after { opacity: 1; }
+.theme-christmas .tile:focus::after { opacity: 1; }
 
 /* snowfall: three pictures of flakes sliding down in a loop (see FX.snow) */
 .fx-snow { position: absolute; left: 0; top: 0; width: 100%; height: 100%; animation: fx-sway 11s ease-in-out infinite alternate; }
@@ -212,8 +212,8 @@ body.has-modal #fxdom * { animation-play-state: paused !important; }
 /* focus: a glow behind the frame and a light bar under it, both pre-painted */
 .theme-space .tile::before { content: ""; position: absolute; left: 6%; right: 6%; top: 7%; bottom: 9%; border-radius: 1.5rem; box-shadow: 0 0 1.1rem .15rem rgba(127,230,255,.75), 0 0 2.6rem .4rem rgba(47,141,255,.5); opacity: 0; transition: opacity .18s; }
 .theme-space .tile::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 6.5%; height: .28rem; border-radius: .2rem; background: #d9fdff; box-shadow: 0 0 .9rem #7fe6ff, 0 0 2rem #2f8dff; opacity: 0; transform: scaleX(.3); transition: opacity .2s, transform .28s cubic-bezier(.2,.8,.2,1); }
-.theme-space .tile:focus::before, .theme-space .tile:hover::before { opacity: 1; }
-.theme-space .tile:focus::after, .theme-space .tile:hover::after { opacity: 1; transform: none; }
+.theme-space .tile:focus::before { opacity: 1; }
+.theme-space .tile:focus::after { opacity: 1; transform: none; }
 
 /* space ambience: every moving piece is transform/opacity only (see FX.space) */
 .sp-nebula { position: absolute; left: 35%; top: -23%; width: 53%; height: 70%; background: radial-gradient(ellipse, rgba(255,101,244,.13), rgba(136,100,255,.07) 43%, transparent 70%); animation: sp-neb 16s ease-in-out infinite alternate; }
@@ -262,8 +262,8 @@ body.theme-space .tile.moving::before { top: -3%; }
 .theme-neon .tile .plus { top: 20%; font-size: 4.2rem; }
 .theme-neon .tile::before { content: ""; position: absolute; left: 6.5%; right: 6.5%; top: 9.5%; bottom: 9.5%; border-radius: 1.5rem; box-shadow: 0 0 1rem .15rem rgba(94,233,255,.85), 0 0 2.6rem .4rem rgba(255,70,214,.5); opacity: 0; transition: opacity .18s; }
 .theme-neon .tile::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 5.5%; height: .28rem; border-radius: .2rem; background: #e2fdff; box-shadow: 0 0 .9rem #5ee9ff, 0 0 2rem #ff46d6; opacity: 0; transform: scaleX(.3); transition: opacity .2s, transform .28s cubic-bezier(.2,.8,.2,1); }
-.theme-neon .tile:focus::before, .theme-neon .tile:hover::before { opacity: 1; }
-.theme-neon .tile:focus::after, .theme-neon .tile:hover::after { opacity: 1; transform: none; }
+.theme-neon .tile:focus::before { opacity: 1; }
+.theme-neon .tile:focus::after { opacity: 1; transform: none; }
 body.theme-neon .tile.moving::before { top: -3%; }
 
 /* neon ambience: transform/opacity only (see FX.neon) */

@@ -48,7 +48,7 @@
     ['hulu', ['com.hulu.plus', 'com.hulu.livingroomplus'], /hulu/i, 'Hulu'],
     ['apple', ['com.apple.atve.androidtv.appletv'], /apple tv/i, 'Apple TV']
   ];
-  var VERSION = '1.3';
+  var VERSION = '1.4';
 
   // ------------------------------------------------------------------ helpers
   function $(id) { return document.getElementById(id); }
@@ -85,7 +85,8 @@
   function artFor(app) {
     var i;
     for (i = 0; i < ART.length; i++) if (ART[i][1].indexOf(app.package) >= 0) return ART[i][0];
-    for (i = 0; i < ART.length; i++) if (ART[i][2].test(app.label)) return ART[i][0];
+    // by package only: a look-alike name must never earn a brand's tile (the preview's demo apps are the exception)
+    if (app.package.indexOf('demo:') === 0) for (i = 0; i < ART.length; i++) if (ART[i][2].test(app.label)) return ART[i][0];
     return null;
   }
   // Returns false (and keeps what we had) if the device gave no usable list: a transient
@@ -102,7 +103,7 @@
       var label = typeof a.label === 'string' ? a.label.replace(/\s+/g, ' ').trim().slice(0, 80) : '';
       list.push({ package: a.package, label: label || a.package, icon: typeof a.icon === 'string' ? a.icon : '' });
     }
-    if (native && !list.length) return false;
+    if (native && !list.length && !(booted && installed.length <= 1)) return false;   // empty is only believable when the last app goes
     installed = list; byPkg = Object.create(null);
     installed.forEach(function (x) { x.art = artFor(x); byPkg[x.package] = x; });
     return true;
@@ -112,7 +113,7 @@
   function syncPins() {
     var saved = strings(load('aitv_pins', null)), known = strings(load('aitv_known', null)), added = 0;
     if (saved) {
-      pins = saved.filter(function (p) { return byPkg[p]; });
+      allPins = saved; pins = saved.filter(function (p) { return byPkg[p]; });
       if (known) installed.forEach(function (a) { if (known.indexOf(a.package) < 0 && !pinned(a.package)) { pins.push(a.package); added++; } });
     } else {
       pins = [];
@@ -120,13 +121,23 @@
         for (var i = 0; i < installed.length; i++) if (installed[i].art === a[0] && !pinned(installed[i].package)) { pins.push(installed[i].package); break; }
       });
     }
-    save('aitv_pins', pins); save('aitv_known', installed.map(function (a) { return a.package; }));
+    if (!saved && !installed.length) return 0;      // nothing known yet: don't record an empty first layout
+    var all = (known || []).slice(-2000); installed.forEach(function (a) { if (all.indexOf(a.package) < 0) all.push(a.package); });
+    savePins(); save('aitv_known', all);
     return added;
   }
-  var lastLaunch = 0;
+  // Saved order keeps apps that are momentarily missing (mid-update, disabled) in their slot,
+  // so they come back where the user put them instead of jumping to the end.
+  var allPins = [];
+  function savePins() {
+    var out = pins.slice();
+    allPins.forEach(function (p, i) { if (!byPkg[p] && out.indexOf(p) < 0) out.splice(Math.min(i, out.length), 0, p); });
+    allPins = out.slice(0, 2000); save('aitv_pins', allPins);
+  }
+  var lastLaunch = 0, lastPkg = '';
   function launch(pkg) {
-    var a = byPkg[pkg], now = Date.now(); if (!a || now - lastLaunch < 900) return;   // ignore a double press
-    lastLaunch = now;
+    var a = byPkg[pkg], now = Date.now(), dt = now - lastLaunch; if (!a || (pkg === lastPkg && dt >= 0 && dt < 900)) return;   // ignore a double press
+    lastLaunch = now; lastPkg = pkg;
     if (!native) { toast('Preview: this would open ' + a.label); return; }
     var ok = false; try { ok = bridge.launch(pkg) === true; } catch (e) {}
     if (!ok) toast('Couldn’t open ' + a.label);
@@ -163,6 +174,7 @@
   }
 
   // ------------------------------------------------------------------ tiles
+  function initial(label) { var c = ''; try { c = Array.from(label)[0] || ''; } catch (e) { c = label.charAt(0); } return esc(c.toUpperCase()); }
   function keyOf(a) { return a.add ? '\u0000add' : a.package; }
   function tileHtml(a, i) {
     var dir = 'themes/' + theme.id + '/';
@@ -172,7 +184,7 @@
     }
     return '<div class="tile" role="listitem" tabindex="-1" data-f style="--i:' + i + '" aria-label="' + esc(a.label) + '">' +
       '<div class="art" style="background-image:url(' + dir + 't_' + (a.art || 'blank') + '.webp)"></div>' +
-      (a.art ? '' : (a.icon ? '<img class="ico" alt="" src="' + esc(a.icon) + '">' : '<span class="ph">' + esc(a.label.charAt(0).toUpperCase()) + '</span>') +
+      (a.art ? '' : (a.icon ? '<img class="ico" alt="" data-l="' + initial(a.label) + '" src="' + esc(a.icon) + '">' : '<span class="ph">' + initial(a.label) + '</span>') +
         '<span class="lbl"><span>' + esc(a.label) + '</span></span>') + '</div>';
   }
   function items() { return pins.map(function (p) { return byPkg[p]; }).filter(Boolean).concat([{ add: true }]); }
@@ -233,8 +245,11 @@
   function endMove(cancel) {
     if (!moving) return;
     var pkg = moving; moving = null; hint('');
-    if (cancel && moveFrom) pins = moveFrom.filter(function (p) { return byPkg[p]; });
-    moveFrom = null; save('aitv_pins', pins); render(false);
+    if (cancel && moveFrom) {
+      var late = pins.filter(function (p) { return moveFrom.indexOf(p) < 0; });      // apps that arrived during the move
+      pins = moveFrom.filter(function (p) { return byPkg[p]; }).concat(late);
+    }
+    moveFrom = null; savePins(); render(false);
     var i = pins.indexOf(pkg); if (!stack.length) focusTile(i >= 0 ? i : focusIndex);
   }
   function shift(d) {
@@ -278,6 +293,7 @@
   }
   function repaint(keepId) { var m = topModal(); if (m) paintModal(m, keepId); }
   function closeModal(silent) {
+    if (stack.length <= 1) menuPkg = null;
     var m = stack.pop(); if (!m) return;
     m.layer.classList.add('closing');
     setTimeout(function () { if (m.layer.parentNode) m.layer.parentNode.removeChild(m.layer); }, 170);
@@ -335,7 +351,7 @@
     if (!list.length) h += '<p class="none">No apps were found on this device.</p>';
     h += list.map(function (a) {
       var on = pinned(a.package), id = esc(a.package);
-      var ico = a.icon ? '<img class="appico" alt="" src="' + esc(a.icon) + '">' : '<span class="appph">' + esc(a.label.charAt(0).toUpperCase()) + '</span>';
+      var ico = a.icon ? '<img class="appico" alt="" data-l="' + initial(a.label) + '" src="' + esc(a.icon) + '">' : '<span class="appph">' + initial(a.label) + '</span>';
       var r = '<button class="row" data-f data-id="pin-' + id + '" data-act="pin" data-v="' + id + '" role="switch" aria-checked="' + on + '" aria-label="' + esc(a.label) + ' on Home">' + ico +
         '<span class="txt"><b>' + esc(a.label) + '</b><small>' + (on ? 'On Home' : 'Hidden') + '</small></span>' + sw(on) + '</button>';
       return canDel ? '<div class="pair">' + r + '<button class="btn danger" data-f data-id="del-' + id + '" data-act="uninstall" data-v="' + id + '" aria-label="Uninstall ' + esc(a.label) + '">Uninstall</button></div>' : r;
@@ -351,9 +367,10 @@
   }
 
   // ---- per-app menu (hold OK)
+  var menuPkg = null;
   function openAppMenu(pkg) {
     var a = byPkg[pkg]; if (!a || stack.length) return;
-    tipDone();
+    tipDone(); menuPkg = pkg;
     openModal(function () {
       var i = pins.indexOf(pkg), id = esc(pkg);
       return '<header><span class="eyebrow">App options</span><h1>' + esc(a.label) + '</h1></header><div class="body stack">' +
@@ -378,15 +395,15 @@
     pin: function (v, el) {
       if (!byPkg[v]) return;
       var i = pins.indexOf(v); if (i >= 0) pins.splice(i, 1); else pins.push(v);
-      save('aitv_pins', pins); render(false);
+      savePins(); render(false);
       // update in place so the list doesn't jump while the user is toggling
       var on = i < 0; el.setAttribute('aria-checked', String(on)); el.querySelector('.sw').classList.toggle('on', on); el.querySelector('small').textContent = on ? 'On Home' : 'Hidden';
     },
     uninstall: function (v) { try { bridge.uninstall(v); } catch (e) {} },
     open: function (v) { closeAll(); launch(v); },
     move: function (v) { closeAll(); startMove(v); },
-    front: function (v) { var i = pins.indexOf(v); if (i > 0) { pins.splice(0, 0, pins.splice(i, 1)[0]); save('aitv_pins', pins); render(false); } closeAll(); focusTile(0); },
-    hide: function (v) { var i = pins.indexOf(v); if (i >= 0) { pins.splice(i, 1); save('aitv_pins', pins); render(false); } closeAll(); toast((byPkg[v] ? byPkg[v].label : 'App') + ' removed from Home'); }
+    front: function (v) { var i = pins.indexOf(v); if (i > 0) { pins.splice(0, 0, pins.splice(i, 1)[0]); savePins(); render(false); } closeAll(); focusTile(0); },
+    hide: function (v) { var i = pins.indexOf(v); if (i >= 0) { pins.splice(i, 1); savePins(); render(false); } closeAll(); toast((byPkg[v] ? byPkg[v].label : 'App') + ' removed from Home'); }
   };
   modalsEl.addEventListener('click', function (e) {
     var t = e.target.closest && e.target.closest('[data-act]'), m = topModal(); if (!t || !m || !m.card.contains(t)) return;
@@ -625,6 +642,9 @@
       lastSig = sig;
       if (moving && !byPkg[moving]) { moving = null; moveFrom = null; hint(''); }
       var added = syncPins(); render(false);
+      if (menuPkg && !byPkg[menuPkg] && stack.length) {      // the app whose menu is open no longer exists
+        var name = (was[menuPkg] && was[menuPkg].label) || 'App'; menuPkg = null; closeAll(); toast(name + ' uninstalled'); return;
+      }
       var m = topModal(); if (m) { try { paintModal(m, document.activeElement && document.activeElement.getAttribute ? document.activeElement.getAttribute('data-id') : null); } catch (e) { closeAll(); } }
       if (gone && !byPkg[gone]) {
         // the app under the cursor was just removed: say so, and never leave the cursor on another app's Uninstall
@@ -637,11 +657,17 @@
     }
   };
 
+  document.addEventListener('error', function (e) {
+    var t = e.target; if (!t || t.tagName !== 'IMG' || !t.hasAttribute('data-l') || !t.parentNode) return;
+    var ph = document.createElement('span'); ph.className = t.className === 'ico' ? 'ph' : 'appph'; ph.textContent = t.getAttribute('data-l');
+    t.parentNode.replaceChild(ph, t);
+  }, true);
+
   // ------------------------------------------------------------------ boot
   var booted = loadInstalled(); if (booted) { syncPins(); lastSig = signature(); }
   $('bg').src = 'themes/' + theme.id + '/home.webp';
   fit(); paintTheme(); tick(true); setInterval(tick, 5000);
-  setTimeout(function () { fit(); focusTile(0); }, 80);
+  setTimeout(function () { fit(); if (!stack.length) focusTile(0); }, 80);
   // the app list can be slow right after the device boots: keep asking until it arrives
   if (!booted) (function retry(n) { setTimeout(function () { if (loadInstalled()) { lastSig = signature(); syncPins(); render(true); } else if (n < 20) retry(n + 1); }, 1500); })(0);
   maybeTip();
