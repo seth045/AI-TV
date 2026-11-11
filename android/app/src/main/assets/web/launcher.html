@@ -22,7 +22,7 @@ html,body{margin:0;min-height:100%;background:#060810;color:#fff;font-family:Int
 @media(prefers-reduced-motion:reduce){.flake{animation:none!important}.hit,.movie-tile,.provider{transition:none}}
 </style></head>
 <body><div id="app">
-<section class="home" id="home" aria-label="Photorealistic Christmas home screen"><img class="home-picture" src="home.webp" alt="Cinematic snowy Christmas cabin with glowing decorations and themed television app tiles" draggable="false"/><div class="home-shadow"></div>
+<section class="home" id="home" aria-label="Photorealistic Christmas home screen"><img class="home-picture" src="themes/christmas/home.webp" alt="Cinematic snowy Christmas cabin with glowing decorations and themed television app tiles" draggable="false"/><div class="home-shadow"></div>
 <!-- Transparent interactive hotspots are aligned to the original art. -->
 <div id="hitbox"></div><div class="home-clock"><div class="time" id="hclock">10:42 PM</div><div class="date" id="hdate">Tuesday, Dec 23</div></div><div class="home-note">INTERACTIVE DEMO · SELECT AN APP OR MOVIE · ESC TO GO HOME</div></section>
 <section class="view" id="view" hidden><div class="view-head"><nav class="site-nav"><button class="brand" data-nav="Home" style="border:0;background:transparent;text-align:left">🎄 Holiday TV <span>— CINEMATIC EDITION —</span></button><div class="navlinks" id="navlinks"></div><div class="head-actions"><button data-action="search" aria-label="Search">⌕ Search</button><button data-action="settings" aria-label="Settings">⚙</button><button data-action="profiles" aria-label="Profiles">♙</button></div></nav><div class="view-intro"><div class="kicker">A little magic on every screen</div><h1 id="view-title">Holiday Movies</h1><p id="view-sub">Cozy classics and winter favorites selected for you.</p></div></div><main class="content"><div id="filters" class="filters"></div><div class="section-top"><h2 id="grid-title">Featured</h2><small id="item-count"></small></div><div id="grid" class="movie-grid"></div></main></section>
@@ -76,7 +76,7 @@ function play(){if(!state.movie)return;const m=state.movie;open(`<div class="kic
 function updatePlayer(){if(!$('#progress-fill'))return;$('#progress-fill').style.width=state.pos+'%';let sec=Math.round(state.pos*.9);$('#elapsed').textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');$('#togglePlay').textContent=state.playing?'❚❚ Pause':'▶ Play';$('#player-progress').setAttribute('aria-valuenow',String(Math.round(state.pos)))}
 function search(){open(`<div class="kicker">DISCOVER SOMETHING WONDERFUL</div><h2>Search Holiday TV</h2><input class="search-input" id="query" type="search" placeholder="Search movies, shows, apps…" aria-label="Search movies, shows and apps" autocomplete="off"/><div class="results" id="results"></div>`);drawResults('');$('#query').focus()}
 function drawResults(query){const q=query.toLowerCase().trim();const found=[...movies.filter(m=>m.title.toLowerCase().includes(q)||m.genre.toLowerCase().includes(q)).map(m=>({name:m.title,subtitle:`${m.type} · ${m.genre}`,icon:m.emoji,key:'data-movie',id:m.id})),...providers.filter(p=>p.name.toLowerCase().includes(q)).map(p=>({name:p.name,subtitle:'Streaming app',icon:'📺',key:'data-provider',id:p.id}))];$('#results').innerHTML=found.length?found.map(x=>`<button class="result" ${x.key}="${x.id}"><span><b>${x.icon} ${esc(x.name)}</b><small>${esc(x.subtitle)}</small></span>→</button>`).join(''):'<p>No matches. Try “Elf”, “Family”, or “Hulu”.</p>'}
-function settings(){let opts=[['snow','Animated snowfall','Real animated flakes over your TV screen'],['glow','Warm golden lighting','Switch gold accents to icy-blue highlights'],['clock24','24-hour clock','Show the time in 24-hour format']];open(`<div class="kicker">MAKE IT YOUR OWN</div><h2>Christmas Settings</h2><p>Personalize your TV. Changes are saved automatically in this browser.</p>${opts.map(o=>`<div class="setting"><div><b>${o[1]}</b><small>${o[2]}</small></div><button role="switch" aria-checked="${!!prefs[o[0]]}" aria-label="${o[1]}" data-setting="${o[0]}" class="switch ${prefs[o[0]]?'on':''}"></button></div>`).join('')}<div class="actions"><button class="btn alt" data-action="fullscreen">⛶ Fullscreen</button><button class="btn alt" data-action="reset">↻ Reset my demo</button></div>`)}
+function settings(){let opts=[['snow','Animated snowfall','Real animated flakes over your TV screen'],['glow','Warm golden lighting','Switch gold accents to icy-blue highlights'],['clock24','24-hour clock','Show the time in 24-hour format']];open(`<div class="kicker">MAKE IT YOUR OWN</div><h2>Christmas Settings</h2><p>Personalize your TV. Changes are saved automatically on this TV.</p>${opts.map(o=>`<div class="setting"><div><b>${o[1]}</b><small>${o[2]}</small></div><button role="switch" aria-checked="${!!prefs[o[0]]}" aria-label="${o[1]}" data-setting="${o[0]}" class="switch ${prefs[o[0]]?'on':''}"></button></div>`).join('')}<div class="actions"><button class="btn alt" data-action="fullscreen">⛶ Fullscreen</button><button class="btn alt" data-action="reset">↻ Reset my demo</button></div>`)}
 function profiles(){open(`<div class="kicker">WHO’S WATCHING?</div><h2>Choose a Profile</h2><div class="profile-list">${[['🎅','Santa'],['🙂','Guest'],['🦌','Rudolph']].map(p=>`<button class="profile" data-profile="${p[1]}"><span>${p[0]}</span>${p[1]}</button>`).join('')}</div>`)}
 function full(){if(document.fullscreenElement){document.exitFullscreen?.()}else{document.documentElement.requestFullscreen?.().catch(()=>toast('Fullscreen is unavailable here'))}}
 function action(name){switch(name){case'close':close();break;case'search':search();break;case'settings':settings();break;case'profiles':profiles();break;case'browse':nav('Movies');break;case'favorite':favorite();break;case'play':play();break;case'toggle':state.playing=!state.playing;updatePlayer();break;case'back10':state.pos=Math.max(0,state.pos-11);updatePlayer();break;case'next10':state.pos=Math.min(100,state.pos+11);updatePlayer();break;case'backMovie':showMovie(state.movie?.id);break;case'fullscreen':full();break;case'reset':if(confirm('Reset watch progress, saved movies, and settings?')){try{for(const k of ['prefs','favorites','progress'])localStorage.removeItem('holiday_cine_'+k)}catch(e){}location.reload()}break;}}
@@ -88,29 +88,40 @@ $('#overlay').addEventListener('keydown',e=>{if(e.key==='Tab'){const btns=$$('#o
 glow();
 })();
 </script><style>
-/* AI-TV: live, user-editable app row drawn over the artwork's tile frames */
-.slot{border-radius:1.35vw}
-.slot .patch{position:absolute;left:7.93%;top:21.1%;width:84.15%;height:74.8%;background:center/100% 100% no-repeat;pointer-events:none}
-.slot .ico{position:absolute;left:12%;top:4%;width:76%;height:60%;object-fit:contain;filter:drop-shadow(0 2px 4px #0009)}
-.slot .lbl{position:absolute;left:2%;right:2%;bottom:7%;text-align:center;font-size:clamp(8px,1.1vw,21px);font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 4px #000}
-.slot .plus{position:absolute;left:0;right:0;top:2%;text-align:center;font-size:clamp(20px,3.6vw,70px);font-weight:300;line-height:1.1;color:#ffe0a2}
-.slot.inert{pointer-events:none}
-.row-more{position:absolute;top:41.5%;z-index:5;font-size:clamp(10px,1.5vw,28px);color:#ffe0a2;text-shadow:0 0 8px #000,0 0 3px #000;pointer-events:none}
-.applist{max-height:46vh;overflow-y:auto;padding-right:8px}
-.applist .setting{padding:11px 0}
-.applist .who{display:flex;align-items:center;gap:14px;min-width:0}
+/* AI-TV: live app grid, settings button, theme + app management */
+.home-note,#hitbox{display:none!important}
+/* five columns, exactly two rows visible; further rows scroll a whole row at a time */
+.aitv-grid{position:absolute;left:6.6%;right:6.6%;top:36.6%;bottom:3.2%;overflow-y:auto;overflow-x:hidden;z-index:4;scrollbar-width:none;scroll-behavior:smooth;scroll-snap-type:y mandatory;scroll-padding-top:1.3vw}
+.aitv-grid::-webkit-scrollbar{display:none}
+.aitv-in{display:grid;grid-template-columns:repeat(5,1fr);gap:1.6vw .9vw;padding:1.3vw .8vw 1.5vw}
+.tile{position:relative;aspect-ratio:184/166;scroll-snap-align:start;border:0;padding:0;background:center/100% 100% no-repeat;color:#fff;transition:transform .15s ease;outline:none!important}
+.tile:after{content:"";position:absolute;left:3.5%;right:3.5%;top:16.5%;bottom:2.5%;border-radius:15%/18%;border:3px solid transparent;transition:border-color .15s,box-shadow .15s;pointer-events:none}
+.tile:focus,.tile:hover{transform:scale(1.07);z-index:2}
+.tile:focus:after,.tile:hover:after{border-color:#ffe4aa;box-shadow:0 0 14px #fdd180cc,0 0 36px #f87e3399,inset 0 0 30px #f7af3e33}
+.tile .ico{position:absolute;left:20%;top:28%;width:60%;height:36%;object-fit:contain;filter:drop-shadow(0 2px 4px #0009)}
+.tile .lbl{position:absolute;left:14%;right:14%;bottom:12.5%;text-align:center;font-size:clamp(9px,1.55vw,30px);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 4px #000}
+.tile .plus{position:absolute;left:0;right:0;top:25%;text-align:center;font-size:clamp(22px,4.6vw,88px);font-weight:300;line-height:1;color:#ffe0a2}
+.aitv-gear{position:absolute;right:15.4%;top:1.9%;width:3.5%;aspect-ratio:1;z-index:5;border-radius:50%;border:2px solid #ffe0a266;background:#0b1422b8;display:flex;align-items:center;justify-content:center;padding:0;transition:transform .15s,box-shadow .15s,border-color .15s;outline:none!important}
+.aitv-gear svg{width:58%;height:58%;fill:none;stroke:#ffe6b8;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.aitv-gear:focus,.aitv-gear:hover{transform:scale(1.12);border-color:#ffe4aa;box-shadow:0 0 14px #fdd180cc,0 0 34px #f87e3399}
+.applist{max-height:44vh;overflow-y:auto;padding-right:8px}
+.applist .setting{padding:10px 0}
+.applist .who{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
+.applist .who b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .applist img{width:64px;height:36px;object-fit:contain;flex:none}
+.applist .btn{padding:8px 13px;font-size:12px}
+.themes{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .switch.on{background:#b52a23}.switch.on:before{transform:translateX(23px)}
 </style>
 <script>
 /* AI-TV native adapter.
-   - The app row is live: each slot shows one of the user's chosen apps (any app
-     installed on the device), and the row scrolls when there are more than fit.
-   - "Add app" / Settings > Choose Home apps opens a picker of every installed app.
-   - Apps launch natively through the AndroidTV bridge; Back is wired for the shell. */
+   Home = themed artwork + a live grid of the user's apps (any installed app can be
+   added or removed). A settings button (top right) switches themes and manages apps.
+   Apps launch / uninstall through the AndroidTV bridge. */
 (function(){
-  var IMG_W=1672, IMG_H=941, SLOTS=7;
-  var ART=[ // artwork that exists for these apps: [id, package candidates, label pattern, demo name]
+  // Add a theme: drop home.webp + t_<art>.webp tiles in themes/<id>/ and list it here.
+  var THEMES=[{id:'christmas',name:'Christmas'}];
+  var ART=[ // apps that have their own tile artwork: [art id, package candidates, label pattern, preview name]
     ['netflix',['com.netflix.ninja'],/netflix/i,'Netflix'],
     ['disney',['com.disney.disneyplus'],/disney/i,'Disney+'],
     ['max',['com.wbd.stream','com.hbo.hbonow','com.hbo.hbomax'],/^(hbo )?max$/i,'Max'],
@@ -119,8 +130,11 @@ glow();
     ['hulu',['com.hulu.plus','com.hulu.livingroomplus'],/hulu/i,'Hulu'],
     ['apple',['com.apple.atve.androidtv.appletv'],/apple tv/i,'Apple TV']];
   var native=!!(window.AndroidTV&&AndroidTV.listApps&&AndroidTV.launch);
-  var installed=[], byPkg={}, pins=[], offset=0, slots=[], more=[];
+  var installed=[], byPkg={}, pins=[], theme='christmas', grid, inner, pickerOpen=false;
+  function get(k){ try{return JSON.parse(localStorage.getItem(k))}catch(e){return null} }
+  function set(k,v){ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} }
   function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function dir(){ return 'themes/'+theme+'/'; }
   function artFor(app){
     for(var i=0;i<ART.length;i++){ if(ART[i][1].indexOf(app.package)>=0) return ART[i][0]; }
     for(i=0;i<ART.length;i++){ if(ART[i][2].test(app.label||'')) return ART[i][0]; }
@@ -132,64 +146,58 @@ glow();
     else installed=ART.map(function(a){return{package:'demo:'+a[0],label:a[3],icon:''}}); // browser preview
     installed.forEach(function(a){ a.art=artFor(a); byPkg[a.package]=a; });
   }
-  function loadPins(){
-    var saved=null; try{saved=JSON.parse(localStorage.getItem('aitv_pins'))}catch(e){}
-    if(saved&&saved.length!==undefined){ pins=saved.filter(function(p){return byPkg[p]}); return; }
-    pins=[]; // first run: the apps the artwork was designed around, in its order
-    ART.forEach(function(a){ for(var i=0;i<installed.length;i++){ if(installed[i].art===a[0]&&pins.indexOf(installed[i].package)<0){ pins.push(installed[i].package); break; } } });
+  // Pins = what is on Home. Newly installed apps are added automatically, like a normal TV home screen.
+  function syncPins(){
+    var saved=get('aitv_pins'), known=get('aitv_known');
+    if(saved&&saved.length!==undefined){
+      pins=saved.filter(function(p){return byPkg[p]});
+      if(known) installed.forEach(function(a){ if(known.indexOf(a.package)<0&&pins.indexOf(a.package)<0) pins.push(a.package); });
+    } else {
+      pins=[]; ART.forEach(function(a){ for(var i=0;i<installed.length;i++){ if(installed[i].art===a[0]&&pins.indexOf(installed[i].package)<0){ pins.push(installed[i].package); break; } } });
+    }
+    set('aitv_pins',pins); set('aitv_known',installed.map(function(a){return a.package}));
   }
-  function savePins(){ try{localStorage.setItem('aitv_pins',JSON.stringify(pins))}catch(e){} }
-  function items(){ return pins.map(function(p){return byPkg[p]}).concat([{add:true}]); }
 
   function build(){
-    var box=document.getElementById('hitbox'); if(!box) return;
-    // drop the top navigation, tool icons and the fixed app hotspots from the original art
-    [].slice.call(box.querySelectorAll('.hit')).forEach(function(h){
-      var top=parseFloat(h.style.top)||0;
-      if((h.classList.contains('nav-hit')&&top<8)||h.classList.contains('tool-hit')||h.hasAttribute('data-provider')) h.remove();
-    });
-    var first=box.firstChild;
-    for(var i=0;i<SLOTS;i++){
-      var b=document.createElement('button'); b.className='hit slot'; b.setAttribute('data-slot',i);
-      b.style.left=((122+184.4*i)/IMG_W*100)+'%'; b.style.top=(350/IMG_H*100)+'%';
-      b.style.width=(164/IMG_W*100)+'%'; b.style.height=(147/IMG_H*100)+'%';
-      box.insertBefore(b,first); slots.push(b);
-      b.addEventListener('keydown',rowKey);
-    }
-    ['‹','›'].forEach(function(ch,k){ var m=document.createElement('div'); m.className='row-more'; m.textContent=ch; m.style.left=(k?94.6:5.6)+'%'; m.hidden=true; box.appendChild(m); more.push(m); });
+    var home=document.getElementById('home');
+    grid=document.createElement('div'); grid.className='aitv-grid'; inner=document.createElement('div'); inner.className='aitv-in'; grid.appendChild(inner); home.appendChild(grid);
+    var g=document.createElement('button'); g.className='aitv-gear'; g.setAttribute('data-action','settings'); g.setAttribute('aria-label','Settings and themes');
+    g.innerHTML='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.9 2.9l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.9-2.9l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.9-2.9l.1.1a1.7 1.7 0 001.9.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.9 2.9l-.1.1a1.7 1.7 0 00-.3 1.9v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>';
+    home.appendChild(g);
+    grid.addEventListener('focusin',function(e){ var t=e.target.closest&&e.target.closest('.tile'); if(t&&t.scrollIntoView) t.scrollIntoView({block:'nearest'}); });
   }
+  function applyTheme(){ var img=document.querySelector('.home-picture'); if(img) img.src=dir()+'home.webp'; }
   function render(){
-    var list=items(); offset=Math.max(0,Math.min(offset,Math.max(0,list.length-SLOTS)));
-    slots.forEach(function(b,i){
-      var it=list[offset+i]; b.removeAttribute('data-provider'); b.removeAttribute('data-pkg'); b.removeAttribute('data-aitv');
-      b.className='hit slot'; b.disabled=false;
-      if(!it){ b.classList.add('inert'); b.disabled=true; b.setAttribute('aria-hidden','true'); b.innerHTML='<div class="patch" style="background-image:url(p_blank.webp)"></div>'; return; }
-      b.removeAttribute('aria-hidden');
-      if(it.add){ b.setAttribute('data-aitv','manage'); b.setAttribute('aria-label','Add or remove apps'); b.title='';
-        b.innerHTML='<div class="patch" style="background-image:url(p_blank.webp)"><div class="plus">+</div><div class="lbl">Add app</div></div>'; return; }
-      b.setAttribute('aria-label','Open '+it.label); b.title='';
-      if(it.package.indexOf('demo:')===0) b.setAttribute('data-provider',it.package.slice(5)); else b.setAttribute('data-pkg',it.package);
-      if(it.art) b.innerHTML='<div class="patch" style="background-image:url(p_'+it.art+'.webp)"></div>';
-      else b.innerHTML='<div class="patch" style="background-image:url(p_blank.webp)">'+(it.icon?'<img class="ico" alt="" src="'+it.icon+'">':'')+'<div class="lbl">'+esc(it.label)+'</div></div>';
-    });
-    more[0].hidden=offset<=0; more[1].hidden=offset+SLOTS>=list.length;
+    var keep=document.activeElement&&document.activeElement.getAttribute&&document.activeElement.getAttribute('data-key');
+    var html=pins.map(function(p){ var a=byPkg[p]; if(!a) return '';
+      var attr=a.package.indexOf('demo:')===0?'data-provider="'+esc(a.package.slice(5))+'"':'data-pkg="'+esc(a.package)+'"';
+      return '<button class="tile" data-key="'+esc(a.package)+'" '+attr+' aria-label="Open '+esc(a.label)+'" style="background-image:url('+dir()+'t_'+(a.art||'blank')+'.webp)">'+
+        (a.art?'':(a.icon?'<img class="ico" alt="" src="'+a.icon+'">':'')+'<span class="lbl">'+esc(a.label)+'</span>')+'</button>'; }).join('');
+    html+='<button class="tile" data-key="+" data-aitv="manage" aria-label="Add or remove apps" style="background-image:url('+dir()+'t_blank.webp)"><span class="plus">+</span><span class="lbl">Add / remove</span></button>';
+    inner.innerHTML=html;
+    if(keep){ var el=inner.querySelector('[data-key="'+keep.replace(/"/g,'')+'"]'); if(el) el.focus(); }
   }
-  function rowKey(e){
-    var i=+this.getAttribute('data-slot'), n=items().length, k=e.key||'', kc=e.keyCode;
-    var right=k==='ArrowRight'||kc===39, left=k==='ArrowLeft'||kc===37;
-    if(right&&i===SLOTS-1&&offset+SLOTS<n){ offset++; render(); e.preventDefault(); e.stopPropagation(); }
-    else if(left&&i===0&&offset>0){ offset--; render(); e.preventDefault(); e.stopPropagation(); }
-  }
-  function focusRow(){ for(var i=0;i<slots.length;i++){ if(!slots[i].disabled){ slots[i].focus(); return; } } }
+  function focusHome(){ var f=inner.querySelector('.tile'); if(f) f.focus(); }
 
-  // ---- app picker ----
-  var pickerOpen=false;
-  function openPicker(){
+  // ---- settings additions: theme switcher + app management ----
+  function decorateSettings(){
+    var body=document.getElementById('modal-body'); if(!body||body.querySelector('.themes')) return;
+    var first=body.querySelector('.setting'), wrap=document.createElement('div');
+    wrap.innerHTML='<div class="setting"><div><b>Theme</b><small>'+(THEMES.length>1?'Choose the look of your Home screen':'More themes are coming soon')+'</small></div><div class="themes">'+
+      THEMES.map(function(t){ return '<button class="btn'+(t.id===theme?'':' alt')+'" data-theme="'+t.id+'">'+(t.id===theme?'✓ ':'')+esc(t.name)+'</button>'; }).join('')+'</div></div>'+
+      '<div class="setting"><div><b>Home apps</b><small>Add, remove or uninstall the apps on your Home screen</small></div><button class="btn" data-aitv="manage">Manage apps</button></div>';
+    while(wrap.firstChild) body.insertBefore(wrap.firstChild, first);
+  }
+  function setTheme(id){ theme=id; set('aitv_theme',id); applyTheme(); render(); var b=document.getElementById('modal-body'); var t=b&&b.querySelector('.themes'); if(t){ var s=t.closest('.setting'), n=s.nextElementSibling; s.remove(); if(n&&n.querySelector('[data-aitv=manage]')) n.remove(); decorateSettings(); var f=b.querySelector('[data-theme="'+id+'"]'); if(f) f.focus(); } }
+  function openPicker(focusPkg){
     var ov=document.getElementById('overlay'), body=document.getElementById('modal-body'); if(!ov||!body) return;
     var list=installed.slice().sort(function(a,b){ var pa=pins.indexOf(a.package)>=0, pb=pins.indexOf(b.package)>=0; return pa===pb ? (a.label||'').localeCompare(b.label||'') : (pa?-1:1); });
-    body.innerHTML='<div class="kicker">YOUR HOME SCREEN</div><h2>Choose Home Apps</h2><p>Switch on any app installed on this device to add it to your Home row. Switch it off to remove it.</p><div class="applist">'+
-      list.map(function(a){ var on=pins.indexOf(a.package)>=0; return '<div class="setting"><div class="who">'+(a.icon?'<img alt="" src="'+a.icon+'">':'')+'<b>'+esc(a.label)+'</b></div><button role="switch" aria-checked="'+on+'" aria-label="'+esc(a.label)+'" data-pin="'+esc(a.package)+'" class="switch'+(on?' on':'')+'"></button></div>'; }).join('')+
-      '</div><div class="actions"><button class="btn" data-action="close">Done</button></div>';
+    var canDel=native&&AndroidTV.uninstall, canStore=native&&AndroidTV.openStore;
+    body.innerHTML='<div class="kicker">YOUR HOME SCREEN</div><h2>Manage Apps</h2><p>Switch an app on to show it on Home, or off to hide it.'+(canDel?' Uninstall removes it from this device.':'')+' Newly installed apps appear on Home automatically.</p><div class="applist">'+
+      list.map(function(a){ var on=pins.indexOf(a.package)>=0; return '<div class="setting"><div class="who">'+(a.icon?'<img alt="" src="'+a.icon+'">':'')+'<b>'+esc(a.label)+'</b></div>'+
+        (canDel?'<button class="btn alt" data-uninstall="'+esc(a.package)+'" aria-label="Uninstall '+esc(a.label)+'">Uninstall</button>':'')+
+        '<button role="switch" aria-checked="'+on+'" aria-label="Show '+esc(a.label)+' on Home" data-pin="'+esc(a.package)+'" class="switch'+(on?' on':'')+'"></button></div>'; }).join('')+
+      '</div><div class="actions"><button class="btn" data-action="close">Done</button>'+(canStore?'<button class="btn alt" data-aitv="store">＋ Get more apps</button>':'')+'</div>';
     ov.hidden=false; pickerOpen=true; document.body.style.overflow='hidden';
     setTimeout(function(){ var f=body.querySelector('.switch'); if(f) f.focus(); },20);
   }
@@ -197,28 +205,32 @@ glow();
     var p=btn.getAttribute('data-pin'), i=pins.indexOf(p);
     if(i>=0) pins.splice(i,1); else pins.push(p);
     var on=i<0; btn.classList.toggle('on',on); btn.setAttribute('aria-checked',String(on));
-    savePins(); render();
+    set('aitv_pins',pins); render();
   }
-  function launch(pkg){ try{ return !!AndroidTV.launch(pkg) }catch(e){ return false } }
-
   document.addEventListener('click',function(e){
-    var t=e.target.closest&&e.target.closest('[data-pin],[data-aitv],[data-pkg],[data-action]'); if(!t) return;
-    if(t.hasAttribute('data-pin')){ togglePin(t); e.stopImmediatePropagation(); return; }
-    if(t.getAttribute('data-aitv')==='manage'){ openPicker(); e.stopImmediatePropagation(); e.preventDefault(); return; }
-    if(t.hasAttribute('data-pkg')){ launch(t.getAttribute('data-pkg')); e.stopImmediatePropagation(); e.preventDefault(); return; }
+    var t=e.target.closest&&e.target.closest('[data-pin],[data-aitv],[data-pkg],[data-uninstall],[data-theme],[data-action]'); if(!t) return;
+    function stop(){ e.stopImmediatePropagation(); e.preventDefault(); }
+    if(t.hasAttribute('data-pin')){ togglePin(t); return stop(); }
+    if(t.hasAttribute('data-theme')){ setTheme(t.getAttribute('data-theme')); return stop(); }
+    if(t.hasAttribute('data-uninstall')){ try{AndroidTV.uninstall(t.getAttribute('data-uninstall'))}catch(x){} return stop(); }
+    var k=t.getAttribute('data-aitv');
+    if(k==='manage'){ openPicker(); return stop(); }
+    if(k==='store'){ try{AndroidTV.openStore()}catch(x){} return stop(); }
+    if(t.hasAttribute('data-pkg')){ try{AndroidTV.launch(t.getAttribute('data-pkg'))}catch(x){} return stop(); }
     var act=t.getAttribute('data-action');
-    if(act==='settings'){ setTimeout(function(){ var a=document.querySelector('#modal-body .actions'); if(a&&!a.querySelector('[data-aitv]')){ var b=document.createElement('button'); b.className='btn'; b.setAttribute('data-aitv','manage'); b.textContent='＋ Choose Home apps'; a.insertBefore(b,a.firstChild); } },30); }
-    if(act==='close'&&pickerOpen){ pickerOpen=false; setTimeout(focusRow,40); }
+    if(act==='settings') setTimeout(decorateSettings,30);
+    if(act==='close'){ pickerOpen=false; setTimeout(function(){ var ov=document.getElementById('overlay'); if(ov&&ov.hidden&&!grid.contains(document.activeElement)&&!document.activeElement.classList.contains('aitv-gear')) focusHome(); },60); }
   },true);
 
   window.AITV_LAUNCHER={
     onBack:function(){
       var ov=document.getElementById('overlay'); if(ov&&!ov.hidden){ var c=ov.querySelector('[data-action=close]'); if(c)c.click(); return; }
-      var v=document.getElementById('view'); if(v&&!v.hidden){ var h=document.querySelector('[data-nav=Home]'); if(h)h.click(); setTimeout(focusRow,40); }
+      var v=document.getElementById('view'); if(v&&!v.hidden){ var h=document.querySelector('[data-nav=Home]'); if(h)h.click(); setTimeout(focusHome,40); }
     },
-    refresh:function(){ loadInstalled(); pins=pins.filter(function(p){return byPkg[p]}); render(); }
+    refresh:function(){ loadInstalled(); syncPins(); render(); var ov=document.getElementById('overlay'); if(pickerOpen&&ov&&!ov.hidden) openPicker(); }
   };
-  loadInstalled(); loadPins(); build(); render(); setTimeout(focusRow,300);
+  var st=get('aitv_theme'); if(st&&THEMES.some(function(t){return t.id===st})) theme=st;
+  loadInstalled(); syncPins(); build(); applyTheme(); render(); setTimeout(focusHome,300);
 })();
 </script>
 </body></html>

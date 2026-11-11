@@ -4,6 +4,8 @@
     <!-- A launcher needs the full installed-app list to show and launch everything. -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lets the user uninstall apps from the launcher (system confirmation dialog). -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
     <!-- Runs on TV boxes that have no touchscreen and no leanback requirement should block install. -->
     <uses-feature android:name="android.software.leanback" android:required="false" />

@@ -85,6 +85,33 @@ class WebAppInterface(private val ctx: Context) {
         }
     }
 
+    /** Asks the system to uninstall an app (the user confirms in the system dialog). */
+    @JavascriptInterface
+    fun uninstall(pkg: String): Boolean {
+        return try {
+            ctx.startActivity(
+                Intent(Intent.ACTION_DELETE, android.net.Uri.parse("package:$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** Opens the device's app store so the user can install more apps. */
+    @JavascriptInterface
+    fun openStore(): Boolean {
+        if (launch("com.android.vending")) return true
+        return try {
+            ctx.startActivity(
+                Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://search?q=tv")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private fun toDataUri(d: Drawable): String {
         val w = (if (d.intrinsicWidth > 0) d.intrinsicWidth else 128).coerceAtMost(320)
         val h = (if (d.intrinsicHeight > 0) d.intrinsicHeight else 128).coerceAtMost(320)
